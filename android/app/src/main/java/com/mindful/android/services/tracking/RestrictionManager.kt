@@ -75,6 +75,18 @@ class RestrictionManager(
         Log.d(TAG, "updateBedtimeApps: Bedtime apps updated: $bedtimeApps")
     }
 
+    fun addBlockedApp(packageName: String) {
+        alreadyRestrictedApps[packageName] = RestrictionState(type = RestrictionType.CONTINUOUS_USAGE)
+    }
+
+    fun removeBlockedApp(packageName: String) {
+        alreadyRestrictedApps.remove(packageName)
+    }
+
+    fun getAppRestriction(packageName: String): AppRestriction? {
+        return appsRestrictions[packageName]
+    }
+
 
     // returns nearest time stamp for rechecking
     fun isAppRestricted(packageName: String): RestrictionState? {

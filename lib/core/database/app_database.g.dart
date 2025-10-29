@@ -84,6 +84,22 @@ class $AppRestrictionTableTable extends AppRestrictionTable
               defaultValue: Constant(ReminderType.toast.name))
           .withConverter<ReminderType>(
               $AppRestrictionTableTable.$converterreminderType);
+  static const VerificationMeta _maxContinuousUsageSecMeta =
+      const VerificationMeta('maxContinuousUsageSec');
+  @override
+  late final GeneratedColumn<int> maxContinuousUsageSec = GeneratedColumn<int>(
+      'max_continuous_usage_sec', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _breakTimeSecMeta =
+      const VerificationMeta('breakTimeSec');
+  @override
+  late final GeneratedColumn<int> breakTimeSec = GeneratedColumn<int>(
+      'break_time_sec', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   @override
   List<GeneratedColumn> get $columns => [
         appPackage,
@@ -94,7 +110,9 @@ class $AppRestrictionTableTable extends AppRestrictionTable
         periodDurationInMins,
         associatedGroupId,
         canAccessInternet,
-        reminderType
+        reminderType,
+        maxContinuousUsageSec,
+        breakTimeSec
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -218,6 +236,8 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
 
   /// [ReminderType] Type of reminders to show when using timed app
   final ReminderType reminderType;
+  final int maxContinuousUsageSec;
+  final int breakTimeSec;
   const AppRestriction(
       {required this.appPackage,
       required this.timerSec,
@@ -227,7 +247,9 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
       required this.periodDurationInMins,
       this.associatedGroupId,
       required this.canAccessInternet,
-      required this.reminderType});
+      required this.reminderType,
+      required this.maxContinuousUsageSec,
+      required this.breakTimeSec});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -253,6 +275,8 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
       map['reminder_type'] = Variable<String>(
           $AppRestrictionTableTable.$converterreminderType.toSql(reminderType));
     }
+    map['max_continuous_usage_sec'] = Variable<int>(maxContinuousUsageSec);
+    map['break_time_sec'] = Variable<int>(breakTimeSec);
     return map;
   }
 
@@ -269,6 +293,8 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
           : Value(associatedGroupId),
       canAccessInternet: Value(canAccessInternet),
       reminderType: Value(reminderType),
+      maxContinuousUsageSec: Value(maxContinuousUsageSec),
+      breakTimeSec: Value(breakTimeSec),
     );
   }
 
@@ -289,6 +315,8 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
       canAccessInternet: serializer.fromJson<bool>(json['canAccessInternet']),
       reminderType: $AppRestrictionTableTable.$converterreminderType
           .fromJson(serializer.fromJson<String>(json['reminderType'])),
+      maxContinuousUsageSec: serializer.fromJson<int>(json['maxContinuousUsageSec']),
+      breakTimeSec: serializer.fromJson<int>(json['breakTimeSec']),
     );
   }
   @override
@@ -310,6 +338,8 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
       'reminderType': serializer.toJson<String>($AppRestrictionTableTable
           .$converterreminderType
           .toJson(reminderType)),
+      'maxContinuousUsageSec': serializer.toJson<int>(maxContinuousUsageSec),
+      'breakTimeSec': serializer.toJson<int>(breakTimeSec),
     };
   }
 
@@ -322,7 +352,9 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
           int? periodDurationInMins,
           Value<int?> associatedGroupId = const Value.absent(),
           bool? canAccessInternet,
-          ReminderType? reminderType}) =>
+          ReminderType? reminderType,
+          int? maxContinuousUsageSec,
+          int? breakTimeSec}) =>
       AppRestriction(
         appPackage: appPackage ?? this.appPackage,
         timerSec: timerSec ?? this.timerSec,
@@ -335,6 +367,8 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
             : this.associatedGroupId,
         canAccessInternet: canAccessInternet ?? this.canAccessInternet,
         reminderType: reminderType ?? this.reminderType,
+        maxContinuousUsageSec: maxContinuousUsageSec ?? this.maxContinuousUsageSec,
+        breakTimeSec: breakTimeSec ?? this.breakTimeSec,
       );
   AppRestriction copyWithCompanion(AppRestrictionTableCompanion data) {
     return AppRestriction(
@@ -361,6 +395,12 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
       reminderType: data.reminderType.present
           ? data.reminderType.value
           : this.reminderType,
+      maxContinuousUsageSec: data.maxContinuousUsageSec.present
+          ? data.maxContinuousUsageSec.value
+          : this.maxContinuousUsageSec,
+      breakTimeSec: data.breakTimeSec.present
+          ? data.breakTimeSec.value
+          : this.breakTimeSec,
     );
   }
 
@@ -375,7 +415,9 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
           ..write('periodDurationInMins: $periodDurationInMins, ')
           ..write('associatedGroupId: $associatedGroupId, ')
           ..write('canAccessInternet: $canAccessInternet, ')
-          ..write('reminderType: $reminderType')
+          ..write('reminderType: $reminderType, ')
+          ..write('maxContinuousUsageSec: $maxContinuousUsageSec, ')
+          ..write('breakTimeSec: $breakTimeSec')
           ..write(')'))
         .toString();
   }
@@ -390,7 +432,9 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
       periodDurationInMins,
       associatedGroupId,
       canAccessInternet,
-      reminderType);
+      reminderType,
+      maxContinuousUsageSec,
+      breakTimeSec);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -403,7 +447,9 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
           other.periodDurationInMins == this.periodDurationInMins &&
           other.associatedGroupId == this.associatedGroupId &&
           other.canAccessInternet == this.canAccessInternet &&
-          other.reminderType == this.reminderType);
+          other.reminderType == this.reminderType &&
+          other.maxContinuousUsageSec == this.maxContinuousUsageSec &&
+          other.breakTimeSec == this.breakTimeSec);
 }
 
 class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
@@ -416,6 +462,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
   final Value<int?> associatedGroupId;
   final Value<bool> canAccessInternet;
   final Value<ReminderType> reminderType;
+  final Value<int> maxContinuousUsageSec;
+  final Value<int> breakTimeSec;
   final Value<int> rowid;
   const AppRestrictionTableCompanion({
     this.appPackage = const Value.absent(),
@@ -427,6 +475,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
     this.associatedGroupId = const Value.absent(),
     this.canAccessInternet = const Value.absent(),
     this.reminderType = const Value.absent(),
+    this.maxContinuousUsageSec = const Value.absent(),
+    this.breakTimeSec = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AppRestrictionTableCompanion.insert({
@@ -478,6 +528,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
       Value<int?>? associatedGroupId,
       Value<bool>? canAccessInternet,
       Value<ReminderType>? reminderType,
+      Value<int>? maxContinuousUsageSec,
+      Value<int>? breakTimeSec,
       Value<int>? rowid}) {
     return AppRestrictionTableCompanion(
       appPackage: appPackage ?? this.appPackage,
@@ -489,6 +541,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
       associatedGroupId: associatedGroupId ?? this.associatedGroupId,
       canAccessInternet: canAccessInternet ?? this.canAccessInternet,
       reminderType: reminderType ?? this.reminderType,
+      maxContinuousUsageSec: maxContinuousUsageSec ?? this.maxContinuousUsageSec,
+      breakTimeSec: breakTimeSec ?? this.breakTimeSec,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -530,6 +584,13 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
           .$converterreminderType
           .toSql(reminderType.value));
     }
+    if (maxContinuousUsageSec.present) {
+      map['max_continuous_usage_sec'] =
+          Variable<int>(maxContinuousUsageSec.value);
+    }
+    if (breakTimeSec.present) {
+      map['break_time_sec'] = Variable<int>(breakTimeSec.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -548,6 +609,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
           ..write('associatedGroupId: $associatedGroupId, ')
           ..write('canAccessInternet: $canAccessInternet, ')
           ..write('reminderType: $reminderType, ')
+          ..write('maxContinuousUsageSec: $maxContinuousUsageSec, ')
+          ..write('breakTimeSec: $breakTimeSec, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();

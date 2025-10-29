@@ -20,6 +20,7 @@ class MindfulTrackerService : Service() {
 
     private lateinit var overlayManager: OverlayManager
     private lateinit var reminderManager: ReminderManager
+    private lateinit var continuousUsageManager: ContinuousUsageManager
 
     private lateinit var restrictionManager: RestrictionManager
     val getRestrictionManager get() = restrictionManager
@@ -30,6 +31,11 @@ class MindfulTrackerService : Service() {
     override fun onCreate() {
         overlayManager = OverlayManager(this)
         reminderManager = ReminderManager(overlayManager, ::onNewAppLaunch)
+        continuousUsageManager = ContinuousUsageManager(overlayManager, { packageName ->
+            restrictionManager.addBlockedApp(packageName)
+        }, { packageName ->
+            restrictionManager.removeBlockedApp(packageName)
+        })
         restrictionManager = RestrictionManager(this, ::stopIfNoUsage)
         launchTrackingManager = LaunchTrackingManager(
             context = this,
@@ -77,10 +83,22 @@ class MindfulTrackerService : Service() {
 
 
     @WorkerThread
-    private fun onNewAppLaunch(packageName: String) {
+    private fun onNewAppLaunch(packageName: String?) {
         try {
             reminderManager.cancelReminders()
             overlayManager.dismissSheetOverlay()
+
+            if (packageName == null) {
+                continuousUsageManager.stopTracking()
+                return
+            }
+
+            val restriction = restrictionManager.getAppRestriction(packageName)
+            if (restriction != null) {
+                continuousUsageManager.startTracking(restriction)
+            } else {
+                continuousUsageManager.stopTracking()
+            }
 
             /// check current restrictions
             val currentOrFutureState = restrictionManager.isAppRestricted(packageName)

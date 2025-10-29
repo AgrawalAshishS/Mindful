@@ -131,6 +131,33 @@ class AppsRestrictionsNotifier
     _updateStateDbAndServices(appPackage, restriction, updateVpn: true);
   }
 
+  /// Updates the max continuous usage for a specific app package.
+  Future<void> updateMaxContinuousUsage(
+      String appPackage, int maxContinuousUsageSec) async {
+    final restriction = state[appPackage]?.copyWith(
+            maxContinuousUsageSec: maxContinuousUsageSec) ??
+        defaultAppRestrictionModel.copyWith(
+          appPackage: appPackage,
+          maxContinuousUsageSec: maxContinuousUsageSec,
+        );
+
+    /// Update database and state
+    _updateStateDbAndServices(appPackage, restriction);
+  }
+
+  /// Updates the break time for a specific app package.
+  Future<void> updateBreakTime(String appPackage, int breakTimeSec) async {
+    final restriction =
+        state[appPackage]?.copyWith(breakTimeSec: breakTimeSec) ??
+            defaultAppRestrictionModel.copyWith(
+              appPackage: appPackage,
+              breakTimeSec: breakTimeSec,
+            );
+
+    /// Update database and state
+    _updateStateDbAndServices(appPackage, restriction);
+  }
+
   /// Updates the id of associated [RestrictionGroup] for a specific app package.
   Future<void> updateAssociatedGroupId({
     required List<String> appPackages,

@@ -54,4 +54,11 @@ class AppRestrictionTable extends Table {
   /// [ReminderType] Type of reminders to show when using timed app
   TextColumn get reminderType =>
       textEnum<ReminderType>().withDefault(Constant(ReminderType.toast.name))();
+
+  /// The max continuous usage for the app in SECONDS
+  IntColumn get maxContinuousUsageSec =>
+      integer().withDefault(const Constant(0))();
+
+  /// The break time for the app in SECONDS
+  IntColumn get breakTimeSec => integer().withDefault(const Constant(0))();
 }

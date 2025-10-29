@@ -59,6 +59,8 @@ data class AppRestriction(
                 associatedGroupId = if (jsonObject.isNull("associatedGroupId")) null else jsonObject.optInt(
                     "associatedGroupId"
                 ),
+                maxContinuousUsageSec = jsonObject.optInt("maxContinuousUsageSec", 0),
+                breakTimeSec = jsonObject.optInt("breakTimeSec", 0),
             )
         }
     }
