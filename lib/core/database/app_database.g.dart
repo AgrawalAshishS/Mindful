@@ -190,6 +190,10 @@ class $AppRestrictionTableTable extends AppRestrictionTable
       reminderType: $AppRestrictionTableTable.$converterreminderType.fromSql(
           attachedDatabase.typeMapping.read(
               DriftSqlType.string, data['${effectivePrefix}reminder_type'])!),
+      maxContinuousUsageSec: attachedDatabase.typeMapping.read(DriftSqlType.int,
+          data['${effectivePrefix}max_continuous_usage_sec'])!,
+      breakTimeSec: attachedDatabase.typeMapping.read(
+          DriftSqlType.int, data['${effectivePrefix}break_time_sec'])!,
     );
   }
 
@@ -489,6 +493,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
     this.associatedGroupId = const Value.absent(),
     this.canAccessInternet = const Value.absent(),
     this.reminderType = const Value.absent(),
+    this.maxContinuousUsageSec = const Value.absent(),
+    this.breakTimeSec = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : appPackage = Value(appPackage);
   static Insertable<AppRestriction> custom({
