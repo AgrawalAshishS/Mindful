@@ -43,13 +43,13 @@ class ContinuousUsageTile extends ConsumerWidget {
       leadingIcon: FluentIcons.timer_20_regular,
       titleText: "Continuous Usage",
       subtitleText: continuousUsageSec > 0
-          ? "Max usage: ${Duration(seconds: continuousUsageSec).toTime(context)}, Break: ${Duration(seconds: breakTimeSec).toTime(context)}"
+          ? "Max usage: ${Duration(seconds: continuousUsageSec).toTimeShort(context)}, Break: ${Duration(seconds: breakTimeSec).toTimeShort(context)}"
           : "Not set",
       content: Column(
         children: [
           ListTile(
             title: const Text("Max Continuous Usage"),
-            trailing: Text(Duration(seconds: continuousUsageSec).toTime(context)),
+            trailing: Text(Duration(seconds: continuousUsageSec).toTimeShort(context)),
             onTap: () async {
               final newTime = await showAppTimerPicker(
                 appInfo: appInfo,
@@ -66,7 +66,7 @@ class ContinuousUsageTile extends ConsumerWidget {
           ),
           ListTile(
             title: const Text("Break Time"),
-            trailing: Text(Duration(seconds: breakTimeSec).toTime(context)),
+            trailing: Text(Duration(seconds: breakTimeSec).toTimeShort(context)),
             onTap: () async {
               final newTime = await showAppTimerPicker(
                 appInfo: appInfo,
