@@ -130,6 +130,7 @@ object OverlayBuilder {
                 RestrictionType.APP_ACTIVE_PERIOD -> R.string.app_paused_restriction_app_active_period
                 RestrictionType.GROUP_TIMER -> R.string.app_paused_restriction_group_timer
                 RestrictionType.GROUP_ACTIVE_PERIOD -> R.string.app_paused_restriction_group_active_period
+                RestrictionType.CONTINUOUS_USAGE -> R.string.app_paused_restriction_continuous_usage
             }
         )
 
@@ -259,6 +260,8 @@ object OverlayBuilder {
                     R.string.app_paused_reason_group_active_period_over,
                     state.groupName
                 )
+            RestrictionType.CONTINUOUS_USAGE ->
+                context.getString(R.string.app_paused_reason_continuous_usage_out)
         }
     }
 }

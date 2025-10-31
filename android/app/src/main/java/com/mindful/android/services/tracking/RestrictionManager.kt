@@ -15,6 +15,7 @@ class RestrictionManager(
     private val context: Context,
     private val stopIfNoUsage: () -> Unit,
     private val usageStatsManager: UsageStatsManager = context.getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager,
+    private val continuousUsageManager: ContinuousUsageManager,
 ) {
     private val TAG = "Mindful.RestrictionManager"
 
@@ -115,6 +116,9 @@ class RestrictionManager(
 
         /// Evaluate screen time
         evaluateScreenTimeLimit(restriction, futureStates)?.let { return it }
+
+        /// Evaluate continuous usage
+        evaluateContinuousUsage(restriction)
 
         /// Return the nearest expiration
         if (futureStates.isNotEmpty()) {
@@ -273,5 +277,9 @@ class RestrictionManager(
         }
 
         return null
+    }
+
+    private fun evaluateContinuousUsage(restriction: AppRestriction) {
+        continuousUsageManager.startTracking(restriction.appPackage, restriction)
     }
 }

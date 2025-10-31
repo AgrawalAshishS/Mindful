@@ -42,6 +42,16 @@ data class AppRestriction(
      * ID of the restriction group this app belongs to (nullable).
      */
     val associatedGroupId: Int? = null,
+
+    /**
+     * Maximum continuous usage for the app, in seconds.
+     */
+    val maxContinuousUsageSec: Int = 0,
+
+    /**
+     * Break time after continuous usage, in seconds.
+     */
+    val breakTimeSec: Int = 0,
 ) {
     companion object {
         /**

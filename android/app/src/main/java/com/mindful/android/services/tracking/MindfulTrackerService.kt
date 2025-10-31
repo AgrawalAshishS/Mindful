@@ -31,12 +31,13 @@ class MindfulTrackerService : Service() {
     override fun onCreate() {
         overlayManager = OverlayManager(this)
         reminderManager = ReminderManager(overlayManager, ::onNewAppLaunch)
-        continuousUsageManager = ContinuousUsageManager(overlayManager, { packageName ->
+        continuousUsageManager = ContinuousUsageManager({ packageName ->
             restrictionManager.addBlockedApp(packageName)
+            onNewAppLaunch(packageName)
         }, { packageName ->
             restrictionManager.removeBlockedApp(packageName)
         })
-        restrictionManager = RestrictionManager(this, ::stopIfNoUsage)
+        restrictionManager = RestrictionManager(this, ::stopIfNoUsage, continuousUsageManager = continuousUsageManager)
         launchTrackingManager = LaunchTrackingManager(
             context = this,
             onNewAppLaunched = ::onNewAppLaunch,
@@ -107,6 +108,11 @@ class MindfulTrackerService : Service() {
             currentOrFutureState?.let {
                 /// Already restricted
                 if (it.timeLeftMillis <= 0L) {
+                    if (it.type == RestrictionType.CONTINUOUS_USAGE) {
+                        restriction?.let { restriction ->
+                            continuousUsageManager.startBreak(packageName, restriction)
+                        }
+                    }
                     overlayManager.showSheetOverlay(
                         packageName = packageName,
                         restrictionState = it,
