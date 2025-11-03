@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.annotation.WorkerThread
 import com.mindful.android.AppConstants
 import com.mindful.android.R
+import com.mindful.android.enums.RestrictionType
 import com.mindful.android.generics.ServiceBinder
 import com.mindful.android.helpers.device.NotificationHelper
 import com.mindful.android.helpers.storage.SharedPrefsHelper
@@ -96,7 +97,7 @@ class MindfulTrackerService : Service() {
 
             val restriction = restrictionManager.getAppRestriction(packageName)
             if (restriction != null) {
-                continuousUsageManager.startTracking(restriction)
+                continuousUsageManager.startTracking(packageName,restriction)
             } else {
                 continuousUsageManager.stopTracking()
             }
