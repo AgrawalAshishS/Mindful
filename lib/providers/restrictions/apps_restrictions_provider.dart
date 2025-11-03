@@ -245,6 +245,7 @@ class AppsRestrictionsNotifier
               (e.timerSec > 0 ||
                   e.launchLimit > 0 ||
                   e.periodDurationInMins > 0 ||
+                  e.maxContinuousUsageSec > 0 ||
                   e.associatedGroupId != null),
         )
         .toList();
