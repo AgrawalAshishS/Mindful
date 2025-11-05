@@ -208,11 +208,17 @@ class _AppDashboardScreenState extends ConsumerState<AppDashboardScreen> {
                             .custom_apps_quick_actions_unavailable_warning,
                         fontSize: 14,
                       ).sliver
-                    : AppDashboardRestrictions(
-                        appInfo: appInfo,
-                        appTimer: appTimer,
-                        isPurged: isPurged,
-                      ),
+                    : DefaultListTile(
+                        position: ItemPosition.single,
+                        titleText: context.locale.restrictions_heading,
+                        subtitleText:
+                            context.locale.app_restrictions_tile_subtitle,
+                        leadingIcon: FluentIcons.access_time_20_regular,
+                        onPressed: () => context.pushNamed(
+                          AppRoutes.schedulePath,
+                          params: {"package": widget.packageName},
+                        ),
+                      ).sliver,
 
                 ContentSectionHeader(
                   title: context.locale.quick_actions_heading,

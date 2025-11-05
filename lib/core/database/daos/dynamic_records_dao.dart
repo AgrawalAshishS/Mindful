@@ -20,6 +20,7 @@ import 'package:mindful/core/database/tables/focus_profile_table.dart';
 import 'package:mindful/core/database/tables/focus_sessions_table.dart';
 import 'package:mindful/core/database/tables/notifications_table.dart';
 import 'package:mindful/core/database/tables/restriction_groups_table.dart';
+import 'package:mindful/core/database/tables/schedules_table.dart';
 import 'package:mindful/core/database/adapters/time_of_day_adapter.dart';
 import 'package:mindful/core/enums/session_state.dart';
 import 'package:mindful/core/enums/session_type.dart';
@@ -39,6 +40,8 @@ part 'dynamic_records_dao.g.dart';
     RestrictionGroupsTable,
     AppUsageTable,
     NotificationsTable,
+    Schedules,
+    AppSchedules,
   ],
 )
 class DynamicRecordsDao extends DatabaseAccessor<AppDatabase>
@@ -502,4 +505,48 @@ class DynamicRecordsDao extends DatabaseAccessor<AppDatabase>
           (tbl) => tbl.timeStamp.isSmallerThanValue(date),
         ),
       );
+
+  // ==================================================================================================================
+  // ===================================== SCHEDULES =======================================================
+  // ==================================================================================================================
+
+  /// Loads List of all [Schedule] objects from the database,
+  Future<List<Schedule>> fetchSchedules() async => select(schedules).get();
+
+  /// Insert or Update a [Schedule] object to/in the database.
+  Future<void> insertSchedule(
+    SchedulesCompanion schedule,
+  ) async =>
+      into(schedules).insert(
+        schedule,
+        mode: InsertMode.insertOrReplace,
+      );
+
+  /// Updates a single [Schedule] record by primary key [Schedule.id]
+  Future<void> updateSchedule(Schedule schedule) async =>
+      update(schedules).replace(schedule);
+
+  /// Removes a single [Schedule] record by primary key [Schedule.id]
+  Future<int> deleteSchedule(int id) async =>
+      (delete(schedules)..where((e) => e.id.equals(id))).go();
+
+  // ==================================================================================================================
+  // ===================================== APP SCHEDULES =======================================================
+  // ==================================================================================================================
+
+  /// Removes all [AppSchedule] records for a specific app package.
+  Future<int> deleteAppSchedules(String appPackage) async =>
+      (delete(appSchedules)..where((e) => e.appPackage.equals(appPackage))).go();
+
+  /// Inserts a list of [AppSchedule] records for a specific app package.
+  Future<void> insertAppSchedules(
+      String appPackage, List<int> scheduleIds) async {
+    final companions = scheduleIds
+        .map((scheduleId) => AppSchedulesCompanion.insert(
+              appPackage: appPackage,
+              scheduleId: scheduleId,
+            ))
+        .toList();
+    await batch((batch) => batch.insertAll(appSchedules, companions));
+  }
 }

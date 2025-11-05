@@ -19,6 +19,7 @@ import 'package:mindful/core/database/converters/notification_schedule_list_conv
 import 'package:mindful/core/database/converters/string_list_converter.dart';
 import 'package:mindful/core/database/daos/dynamic_records_dao.dart';
 import 'package:mindful/core/database/daos/unique_records_dao.dart';
+import 'package:mindful/core/database/daos/usage_limits_dao.dart';
 import 'package:mindful/core/database/schemas/schema_versions.dart';
 import 'package:mindful/core/database/tables/app_restriction_table.dart';
 import 'package:mindful/core/database/tables/app_usage_table.dart';
@@ -32,7 +33,10 @@ import 'package:mindful/core/database/tables/notifications_table.dart';
 import 'package:mindful/core/database/tables/parental_controls_table.dart';
 import 'package:mindful/core/database/tables/mindful_settings_table.dart';
 import 'package:mindful/core/database/tables/restriction_groups_table.dart';
+import 'package:mindful/core/database/tables/app_schedules_table.dart';
+import 'package:mindful/core/database/tables/schedules_table.dart';
 import 'package:mindful/core/database/tables/shared_unique_data_table.dart';
+import 'package:mindful/core/database/tables/usage_limits_table.dart';
 import 'package:mindful/core/database/tables/wellbeing_table.dart';
 import 'package:mindful/core/enums/app_theme_mode.dart';
 import 'package:mindful/core/enums/default_home_tab.dart';
@@ -64,8 +68,11 @@ part 'app_database.g.dart';
     AppUsageTable,
     NotificationSettingsTable,
     NotificationsTable,
+    Schedules,
+    AppSchedules,
+    UsageLimitsTable,
   ],
-  daos: [UniqueRecordsDao, DynamicRecordsDao],
+  daos: [UniqueRecordsDao, DynamicRecordsDao, UsageLimitsDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
@@ -82,7 +89,7 @@ class AppDatabase extends _$AppDatabase {
   //
   // STEP 6 => Add migration steps to migration strategy by create new file in migrations folder. See previous migrations for help
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 11;
 
   // Always use [runSafe()] for upgrades - why?
   // If a user imports a backup from a newer schema when they are on an older

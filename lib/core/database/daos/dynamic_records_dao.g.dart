@@ -16,4 +16,6 @@ mixin _$DynamicRecordsDaoMixin on DatabaseAccessor<AppDatabase> {
   $AppUsageTableTable get appUsageTable => attachedDatabase.appUsageTable;
   $NotificationsTableTable get notificationsTable =>
       attachedDatabase.notificationsTable;
+  $SchedulesTable get schedules => attachedDatabase.schedules;
+  $AppSchedulesTable get appSchedules => attachedDatabase.appSchedules;
 }

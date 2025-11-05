@@ -1,4 +1,4 @@
-package com.mindful.android.services.tracking
+package com.mindful.android.services.accessibility
 
 import android.app.Service.USAGE_STATS_SERVICE
 import android.app.usage.UsageStatsManager
@@ -13,7 +13,6 @@ import com.mindful.android.utils.DateTimeUtils
 
 class RestrictionManager(
     private val context: Context,
-    private val stopIfNoUsage: () -> Unit,
     private val usageStatsManager: UsageStatsManager = context.getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager,
 ) {
     private val TAG = "Mindful.RestrictionManager"
@@ -60,18 +59,15 @@ class RestrictionManager(
             alreadyRestrictedGroups.clear()
             Log.d(TAG, "updateRestrictions: Restriction groups updated")
         }
-        stopIfNoUsage.invoke()
     }
 
     fun updateFocusedApps(apps: Set<String>?) {
         focusedApps = apps ?: emptySet()
-        if (apps == null) stopIfNoUsage.invoke()
         Log.d(TAG, "updateFocusedApps: Focus apps updated: $focusedApps")
     }
 
     fun updateBedtimeApps(apps: Set<String>?) {
         bedtimeApps = apps ?: emptySet()
-        if (apps == null) stopIfNoUsage.invoke()
         Log.d(TAG, "updateBedtimeApps: Bedtime apps updated: $bedtimeApps")
     }
 

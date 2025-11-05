@@ -47,79 +47,27 @@ class AppsRestrictionsNotifier
     _updateVpnService();
   }
 
-  /// Updates the timer for a specific app package.
-  ///
-  /// Anyway updated the platform-specific service.
-  Future<void> updateAppTimer(String appPackage, int timerSec) async {
-    final restriction = state[appPackage]?.copyWith(timerSec: timerSec) ??
-        defaultAppRestrictionModel.copyWith(
-          appPackage: appPackage,
-          timerSec: timerSec,
-        );
-
-    /// Update database and state
-    _updateStateDbAndServices(appPackage, restriction);
-  }
-
-  /// Set reminder type for a specific app package if package is not empty.
-  ///
-  /// Anyway call the platform channel service.
-  void setReminderType(String appPackage, ReminderType reminderType) async {
-    final restriction =
-        state[appPackage]?.copyWith(reminderType: reminderType) ??
-            defaultAppRestrictionModel.copyWith(
-              appPackage: appPackage,
-              reminderType: reminderType,
-            );
-
-    /// Update database and state
-    _updateStateDbAndServices(appPackage, restriction);
-  }
-
-  /// Updates the launch limit for a specific app package.
-  ///
-  /// Anyway updated the platform-specific service.
-  Future<void> updateAppLaunchLimit(String appPackage, int launchLimit) async {
-    final restriction = state[appPackage]?.copyWith(launchLimit: launchLimit) ??
-        defaultAppRestrictionModel.copyWith(
-          appPackage: appPackage,
-          launchLimit: launchLimit,
-        );
-
-    /// Update database and state
-    _updateStateDbAndServices(appPackage, restriction);
-  }
-
-  /// Updates the active period time for a specific app package.
-  ///
-  /// Anyway updated the platform-specific service.
-  Future<void> updateActivePeriod(
-    String appPackage,
-    TimeOfDayAdapter startTime,
-    TimeOfDayAdapter endTime,
-  ) async {
-    final periodDuration = endTime.difference(startTime).inMinutes;
-
-    final restriction = state[appPackage]?.copyWith(
-          activePeriodStart: startTime,
-          activePeriodEnd: endTime,
-          periodDurationInMins: periodDuration,
-        ) ??
-        defaultAppRestrictionModel.copyWith(
-          appPackage: appPackage,
-          activePeriodStart: startTime,
-          activePeriodEnd: endTime,
-          periodDurationInMins: periodDuration,
-        );
-
-    /// Update database and state
-    _updateStateDbAndServices(appPackage, restriction);
-  }
-
   /// Toggles internet access permission for a specific app package if package is not empty.
   ///
   /// Anyway call the platform channel service to potentially start or stop a VPN.
   void switchInternetAccess(String appPackage, bool canAccessInternet) async {
+    final restriction =
+        state[appPackage]?.copyWith(canAccessInternet: canAccessInternet) ??
+            defaultAppRestrictionModel.copyWith(
+              appPackage: appPackage,
+              canAccessInternet: canAccessInternet,
+            );
+
+    /// Update database and state
+    _updateStateDbAndServices(appPackage, restriction, updateVpn: true);
+  }
+
+  Future<void> updateAppSchedules(
+      String appPackage, List<int> scheduleIds) async {
+    await _dao.deleteAppSchedules(appPackage);
+    await _dao.insertAppSchedules(appPackage, scheduleIds);
+    _updateTrackerService();
+  }
     final restriction =
         state[appPackage]?.copyWith(canAccessInternet: canAccessInternet) ??
             defaultAppRestrictionModel.copyWith(

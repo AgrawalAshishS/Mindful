@@ -50,12 +50,6 @@ class FgMethodCallHandler(
             serviceClass = FocusSessionService::class.java
         )
 
-    private val trackerServiceConn =
-        SafeServiceConnection(
-            context = context,
-            serviceClass = MindfulTrackerService::class.java
-        )
-
     private val vpnServiceConn =
         SafeServiceConnection(
             context = context,
@@ -68,22 +62,28 @@ class FgMethodCallHandler(
             serviceClass = MindfulNotificationListenerService::class.java
         )
 
+    private val accessibilityServiceConn =
+        SafeServiceConnection(
+            context = context,
+            serviceClass = MindfulAccessibilityService::class.java
+        )
+
 
     init {
         // Bind to Services if they are already running
-        trackerServiceConn.bindService()
         vpnServiceConn.bindService()
         notificationServiceConn.bindService()
         focusServiceConn.bindService()
+        accessibilityServiceConn.bindService()
     }
 
 
     fun dispose() {
         // Unbind all services
-        trackerServiceConn.unBindService()
         vpnServiceConn.unBindService()
         notificationServiceConn.unBindService()
         focusServiceConn.unBindService()
+        accessibilityServiceConn.unBindService()
     }
 
     private fun updateLocale(languageCode: String) {
@@ -134,7 +134,7 @@ class FgMethodCallHandler(
 
             "getAppsLaunchCount" -> {
                 result.success(
-                    trackerServiceConn.service?.getRestrictionManager?.getAppsLaunchCount
+                    accessibilityServiceConn.service?.getRestrictionManager?.getAppsLaunchCount
                         ?: mapOf<String, Int>()
                 )
             }
@@ -160,7 +160,7 @@ class FgMethodCallHandler(
                 val appRestrictions = JsonUtils.parseAppRestrictionsMap(
                     call.arguments() ?: ""
                 )
-                updateTrackerServiceRestrictions(appRestrictions, null)
+                updateAccessibilityServiceRestrictions(appRestrictions, null)
                 result.success(true)
             }
 
@@ -168,7 +168,7 @@ class FgMethodCallHandler(
                 val restrictionGroups = JsonUtils.parseRestrictionGroupsMap(
                     call.arguments() ?: ""
                 )
-                updateTrackerServiceRestrictions(null, restrictionGroups)
+                updateAccessibilityServiceRestrictions(null, restrictionGroups)
                 result.success(true)
             }
 
@@ -445,23 +445,23 @@ class FgMethodCallHandler(
      * @param restrictionGroups a map of restriction group IDs to their respective restrictions,
      * or null if only app-specific restrictions are being updated.
      */
-    private fun updateTrackerServiceRestrictions(
+    private fun updateAccessibilityServiceRestrictions(
         appRestrictions: HashMap<String, AppRestriction>?,
         restrictionGroups: HashMap<Int, RestrictionGroup>?,
     ) {
-        if (trackerServiceConn.isActive) {
-            trackerServiceConn.service?.getRestrictionManager?.updateRestrictions(
+        if (accessibilityServiceConn.isActive) {
+            accessibilityServiceConn.service?.getRestrictionManager?.updateRestrictions(
                 appRestrictions,
                 restrictionGroups
             )
         } else if (appRestrictions?.isNotEmpty() == true || restrictionGroups?.isNotEmpty() == true) {
-            trackerServiceConn.setOnConnectedCallback { service ->
+            accessibilityServiceConn.setOnConnectedCallback { service ->
                 service.getRestrictionManager.updateRestrictions(
                     appRestrictions,
                     restrictionGroups
                 )
             }
-            trackerServiceConn.startAndBind()
+            accessibilityServiceConn.startAndBind()
         }
     }
 

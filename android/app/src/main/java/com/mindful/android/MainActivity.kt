@@ -35,9 +35,6 @@ class MainActivity : FlutterFragmentActivity() {
             )
         }
 
-        // Register notification channels
-        NotificationHelper.registerNotificationChannels(this)
-
         // Register VPN permission launcher
         vpnPermissionLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()

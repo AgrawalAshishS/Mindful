@@ -5983,6 +5983,262 @@ class NotificationsTableCompanion extends UpdateCompanion<Notification> {
   }
 }
 
+class $UsageLimitsTableTable extends UsageLimitsTable
+    with TableInfo<$UsageLimitsTableTable, UsageLimit> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UsageLimitsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _appPackageNameMeta =
+      const VerificationMeta('appPackageName');
+  @override
+  late final GeneratedColumn<String> appPackageName = GeneratedColumn<String>(
+      'app_package_name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _daysMeta = const VerificationMeta('days');
+  @override
+  late final GeneratedColumn<int> days = GeneratedColumn<int>(
+      'days', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _usageLimitMeta =
+      const VerificationMeta('usageLimit');
+  @override
+  late final GeneratedColumn<int> usageLimit = GeneratedColumn<int>(
+      'usage_limit', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, appPackageName, days, usageLimit];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'usage_limits';
+  @override
+  VerificationContext validateIntegrity(Insertable<UsageLimit> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('app_package_name')) {
+      context.handle(
+          _appPackageNameMeta,
+          appPackageName.isAcceptableOrUnknown(
+              data['app_package_name']!, _appPackageNameMeta));
+    } else if (isInserting) {
+      context.missing(_appPackageNameMeta);
+    }
+    if (data.containsKey('days')) {
+      context.handle(
+          _daysMeta, days.isAcceptableOrUnknown(data['days']!, _daysMeta));
+    } else if (isInserting) {
+      context.missing(_daysMeta);
+    }
+    if (data.containsKey('usage_limit')) {
+      context.handle(
+          _usageLimitMeta,
+          usageLimit.isAcceptableOrUnknown(
+              data['usage_limit']!, _usageLimitMeta));
+    } else if (isInserting) {
+      context.missing(_usageLimitMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  UsageLimit map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UsageLimit(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      appPackageName: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}app_package_name'])!,
+      days: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}days'])!,
+      usageLimit: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}usage_limit'])!,
+    );
+  }
+
+  @override
+  $UsageLimitsTableTable createAlias(String alias) {
+    return $UsageLimitsTableTable(attachedDatabase, alias);
+  }
+}
+
+class UsageLimit extends DataClass implements Insertable<UsageLimit> {
+  final int id;
+  final String appPackageName;
+  final int days;
+  final int usageLimit;
+  const UsageLimit(
+      {required this.id,
+      required this.appPackageName,
+      required this.days,
+      required this.usageLimit});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['app_package_name'] = Variable<String>(appPackageName);
+    map['days'] = Variable<int>(days);
+    map['usage_limit'] = Variable<int>(usageLimit);
+    return map;
+  }
+
+  UsageLimitsTableCompanion toCompanion(bool nullToAbsent) {
+    return UsageLimitsTableCompanion(
+      id: Value(id),
+      appPackageName: Value(appPackageName),
+      days: Value(days),
+      usageLimit: Value(usageLimit),
+    );
+  }
+
+  factory UsageLimit.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UsageLimit(
+      id: serializer.fromJson<int>(json['id']),
+      appPackageName: serializer.fromJson<String>(json['appPackageName']),
+      days: serializer.fromJson<int>(json['days']),
+      usageLimit: serializer.fromJson<int>(json['usageLimit']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'appPackageName': serializer.toJson<String>(appPackageName),
+      'days': serializer.toJson<int>(days),
+      'usageLimit': serializer.toJson<int>(usageLimit),
+    };
+  }
+
+  UsageLimit copyWith(
+          {int? id,
+          String? appPackageName,
+          int? days,
+          int? usageLimit}) =>
+      UsageLimit(
+        id: id ?? this.id,
+        appPackageName: appPackageName ?? this.appPackageName,
+        days: days ?? this.days,
+        usageLimit: usageLimit ?? this.usageLimit,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('UsageLimit(')
+          ..write('id: $id, ')
+          ..write('appPackageName: $appPackageName, ')
+          ..write('days: $days, ')
+          ..write('usageLimit: $usageLimit')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, appPackageName, days, usageLimit);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UsageLimit &&
+          other.id == this.id &&
+          other.appPackageName == this.appPackageName &&
+          other.days == this.days &&
+          other.usageLimit == this.usageLimit);
+}
+
+class UsageLimitsTableCompanion extends UpdateCompanion<UsageLimit> {
+  final Value<int> id;
+  final Value<String> appPackageName;
+  final Value<int> days;
+  final Value<int> usageLimit;
+  const UsageLimitsTableCompanion({
+    this.id = const Value.absent(),
+    this.appPackageName = const Value.absent(),
+    this.days = const Value.absent(),
+    this.usageLimit = const Value.absent(),
+  });
+  UsageLimitsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String appPackageName,
+    required int days,
+    required int usageLimit,
+  })  : appPackageName = Value(appPackageName),
+        days = Value(days),
+        usageLimit = Value(usageLimit);
+  static Insertable<UsageLimit> custom({
+    Expression<int>? id,
+    Expression<String>? appPackageName,
+    Expression<int>? days,
+    Expression<int>? usageLimit,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (appPackageName != null) 'app_package_name': appPackageName,
+      if (days != null) 'days': days,
+      if (usageLimit != null) 'usage_limit': usageLimit,
+    });
+  }
+
+  UsageLimitsTableCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? appPackageName,
+      Value<int>? days,
+      Value<int>? usageLimit}) {
+    return UsageLimitsTableCompanion(
+      id: id ?? this.id,
+      appPackageName: appPackageName ?? this.appPackageName,
+      days: days ?? this.days,
+      usageLimit: usageLimit ?? this.usageLimit,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (appPackageName.present) {
+      map['app_package_name'] = Variable<String>(appPackageName.value);
+    }
+    if (days.present) {
+      map['days'] = Variable<int>(days.value);
+    }
+    if (usageLimit.present) {
+      map['usage_limit'] = Variable<int>(usageLimit.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UsageLimitsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('appPackageName: $appPackageName, ')
+          ..write('days: $days, ')
+          ..write('usageLimit: $usageLimit')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6010,10 +6266,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $NotificationSettingsTableTable(this);
   late final $NotificationsTableTable notificationsTable =
       $NotificationsTableTable(this);
+  late final $UsageLimitsTableTable usageLimits = $UsageLimitsTableTable(this);
   late final UniqueRecordsDao uniqueRecordsDao =
       UniqueRecordsDao(this as AppDatabase);
   late final DynamicRecordsDao dynamicRecordsDao =
       DynamicRecordsDao(this as AppDatabase);
+  late final UsageLimitsDao usageLimitsDao =
+      UsageLimitsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6032,7 +6291,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         sharedUniqueDataTable,
         appUsageTable,
         notificationSettingsTable,
-        notificationsTable
+        notificationsTable,
+        usageLimits,
       ];
 }
 

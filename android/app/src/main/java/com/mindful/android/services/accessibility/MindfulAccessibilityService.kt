@@ -24,6 +24,7 @@ import android.view.accessibility.AccessibilityEvent.TYPE_WINDOWS_CHANGED
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Toast
+import com.mindful.android.services.tracking.RestrictionManager
 import com.mindful.android.AppConstants.FACEBOOK_PACKAGE
 import com.mindful.android.AppConstants.INSTAGRAM_PACKAGE
 import com.mindful.android.AppConstants.REDDIT_PACKAGE
@@ -78,11 +79,14 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
     private lateinit var browserManager: BrowserManager
     private lateinit var deviceFeaturesManager: DeviceFeaturesManager
     private lateinit var trackingManager: TrackingManager
+    private lateinit var restrictionManager: RestrictionManager
+    val getRestrictionManager get() = restrictionManager
 
     private var wellbeing = Wellbeing()
 
     override fun onCreate() {
         super.onCreate()
+        restrictionManager = RestrictionManager(this)
         trackingManager = TrackingManager(context = this)
         deviceFeaturesManager = DeviceFeaturesManager(
             context = this,
@@ -148,6 +152,11 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
                 node?.let {
                     // Broadcast event
                     trackingManager.onNewEvent("${it.packageName}")
+                    // check current restrictions
+                    val restrictionState = restrictionManager.isAppRestricted(eventPackageName)
+                    if (restrictionState != null) {
+                        goBackWithToast(GLOBAL_ACTION_HOME)
+                    }
 
                     // Only process if any of the content is blocked
                     if (shouldBlockContent()) {

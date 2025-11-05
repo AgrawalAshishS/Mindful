@@ -20,6 +20,8 @@ import 'package:mindful/ui/screens/home/home_screen.dart';
 import 'package:mindful/ui/screens/parental_controls/parental_controls_screen.dart';
 import 'package:mindful/ui/screens/restriction_groups/restriction_groups_screen.dart';
 import 'package:mindful/ui/screens/settings/settings_screen.dart';
+import 'package:mindful/ui/screens/schedule/edit_schedule_screen.dart';
+import 'package:mindful/ui/screens/schedule/schedule_screen.dart';
 import 'package:mindful/ui/screens/shorts_blocking/shorts_blocking_screen.dart';
 import 'package:mindful/ui/screens/notifications/notifications_screen.dart';
 import 'package:mindful/ui/screens/websites_blocking/websites_blocking_screen.dart';
@@ -43,9 +45,18 @@ class AppRoutes {
   static const String appDashboardPath = '/appDashboard';
   static const String notificationsPath = '/notifications';
 
+  static const String schedulePath = '/schedule';
+  static const String editSchedulePath = '/editSchedule';
+
   static final Map<String, Widget Function(BuildContext)> routes = {
     /// Root
     rootSplashPath: (context) => const SplashScreen(),
+
+    /// Schedule screen
+    schedulePath: (context) => const ScheduleScreen(),
+
+    /// Edit Schedule screen
+    editSchedulePath: (context) => const EditScheduleScreen(),
 
     /// Onboarding screen
     onboardingPath: (context) => OnboardingScreen(
