@@ -10,7 +10,8 @@ enum class PlatformFeatures {
     SNAPCHAT_DISCOVER,
     FACEBOOK_REELS,
     REDDIT_SHORTS,
-    YOUTUBE_SHORTS;
+    YOUTUBE_SHORTS,
+    X_VIDEOS;
 
     companion object {
         fun fromName(name: String): PlatformFeatures? {
@@ -22,6 +23,7 @@ enum class PlatformFeatures {
                 "facebookReels" -> FACEBOOK_REELS
                 "redditShorts" -> REDDIT_SHORTS
                 "youtubeShorts" -> YOUTUBE_SHORTS
+                "xVideos" -> X_VIDEOS
                 else -> null
             }
         }

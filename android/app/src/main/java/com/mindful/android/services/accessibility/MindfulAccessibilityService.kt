@@ -30,6 +30,7 @@ import com.mindful.android.AppConstants.INSTAGRAM_PACKAGE
 import com.mindful.android.AppConstants.REDDIT_PACKAGE
 import com.mindful.android.AppConstants.SETTINGS_PACKAGE
 import com.mindful.android.AppConstants.SNAPCHAT_PACKAGE
+import com.mindful.android.AppConstants.X_PACKAGE
 import com.mindful.android.AppConstants.YOUTUBE_PACKAGE
 import com.mindful.android.R
 import com.mindful.android.enums.PlatformFeatures
@@ -186,7 +187,7 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
                 // Determine package and event source node
                 val eventPackageName = event.packageName.toString()
                 val className = event.className?.toString()
-
+                
                 val node = if (eventPackageName == REDDIT_PACKAGE) event.source
                 else rootInActiveWindow ?: event.source
 
@@ -336,8 +337,7 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
         return wellbeing.blockedFeatures.isNotEmpty() ||
                 wellbeing.blockedWebsites.isNotEmpty() ||
                 wellbeing.nsfwWebsites.isNotEmpty() ||
-                wellbeing.blockNsfwSites ||
-                wellbeing.websiteTimeLimits.isNotEmpty()
+                wellbeing.blockNsfwSites
     }
 
 
@@ -416,6 +416,10 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
                                 shortsPlatformPackages.add(it.activityInfo.packageName)
                             }
                     }
+                    
+                    // X (Twitter)
+                    PlatformFeatures.X_VIDEOS ->
+                        shortsPlatformPackages.add(X_PACKAGE)
                 }
             }
 

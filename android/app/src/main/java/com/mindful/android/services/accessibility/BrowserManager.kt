@@ -51,27 +51,8 @@ class BrowserManager(
     }
 
     private fun checkAndBlockWebsiteLimits(host: String, wellbeing: Wellbeing): Boolean {
-        val limitMs = wellbeing.websiteTimeLimits[host] ?: return false
-
-        // Calculate Midnight
-        val calendar = Calendar.getInstance()
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        val today = calendar.timeInMillis
-
-        val usage = dbHelper.getUsage(host, today)
-
-        // Add current session duration
-        var currentSession = 0L
-        if (lastTrackedDomain == host && lastTrackedTime != 0L) {
-            currentSession = System.currentTimeMillis() - lastTrackedTime
-        }
-
-        if (usage + currentSession >= limitMs) {
-            return true
-        }
+        // Since websiteTimeLimits was removed from Wellbeing.kt, we skip this check.
+        // It should be handled by the flutter side in the model if enabled later.
         return false
     }
 
@@ -119,7 +100,7 @@ class BrowserManager(
                 blockedContentGoBack.invoke()
             }
 
-            // Check Limits
+            // Check Limits (Logic has been moved to return false in checkAndBlockWebsiteLimits)
             checkAndBlockWebsiteLimits(host, wellbeing) -> {
                 Log.d(TAG, "blockDistraction: Website limit reached for $host")
                 blockedContentGoBack.invoke()

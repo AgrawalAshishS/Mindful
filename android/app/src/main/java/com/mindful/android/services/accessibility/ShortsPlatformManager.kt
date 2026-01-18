@@ -7,6 +7,7 @@ import com.mindful.android.AppConstants.FACEBOOK_PACKAGE
 import com.mindful.android.AppConstants.INSTAGRAM_PACKAGE
 import com.mindful.android.AppConstants.REDDIT_PACKAGE
 import com.mindful.android.AppConstants.SNAPCHAT_PACKAGE
+import com.mindful.android.AppConstants.X_PACKAGE
 import com.mindful.android.AppConstants.YOUTUBE_CLIENT_PACKAGE_SUFFIX
 import com.mindful.android.AppConstants.YOUTUBE_PACKAGE
 import com.mindful.android.enums.PlatformFeatures
@@ -57,6 +58,7 @@ class ShortsPlatformManager(
             FACEBOOK_PACKAGE -> isFacebookFeatureOpen(node, blockedFeatures)
             REDDIT_PACKAGE -> isRedditFeatureOpen(node, blockedFeatures)
             YOUTUBE_PACKAGE -> isYoutubeFeatureOpen(node, blockedFeatures, className)
+            X_PACKAGE -> isXVideoOpen(node, blockedFeatures)
             else -> false
         }
 
@@ -93,6 +95,9 @@ class ShortsPlatformManager(
 
             PlatformFeatures.SNAPCHAT_DISCOVER in wellbeing.blockedFeatures
                     && doesUrlContainsAnyElement(mSnapDiscoverUrls, url) -> true
+                    
+            PlatformFeatures.X_VIDEOS in wellbeing.blockedFeatures
+                    && doesUrlContainsAnyElement(mXVideoUrls, url) -> true
 
             else -> false
         }.let {
@@ -163,6 +168,7 @@ class ShortsPlatformManager(
             FACEBOOK_PACKAGE to (90 * 1000L),
             REDDIT_PACKAGE to (60 * 1000L),
             YOUTUBE_PACKAGE to (3 * 60 * 1000L),
+            X_PACKAGE to (180 * 1000L) // Assuming X videos up to 3 mins
         )
 
         // Possible URLs of different short-form content platforms
@@ -181,6 +187,7 @@ class ShortsPlatformManager(
             "m.snapchat.com/discover/",
             "web.snapchat.com/discover/"
         )
+        private val mXVideoUrls = listOf("/video/", "/status/") // Assuming X videos often linked to status or dedicated video page
 
         private val mFbNodeTexts = listOf("Add a comment", "कमेंट जोड़ें…", "Reels", "reels")
 
@@ -194,7 +201,16 @@ class ShortsPlatformManager(
             "shorts_container",
             "reel_container",
             "shorts_video_player_view",
-            "reel_player_overlay_layout"
+            "reel_player_overlay_layout",
+            "shelf_content"
+        )
+
+        // Common View IDs for X/Twitter Videos
+        private val mXVideoViewIds = listOf(
+            "player_surface_view", // Main video playback surface
+            "video_overlay_gradient", // Video overlay used by player
+            "video_player_controls", // Player controls bar
+            "tweet_video_player" // Container for embedded player
         )
 
         // Common View IDs for YouTube bottom tabs
@@ -202,6 +218,7 @@ class ShortsPlatformManager(
 
         // YouTube Shorts Activity Class Name
         private const val YOUTUBE_SHORTS_ACTIVITY = "com.google.android.apps.youtube.app.extensions.reels.watch.activity.ReelWatchActivity"
+
 
         /**
          * Checks if Instagram features (Reels or Search Feed) are open.
@@ -223,6 +240,38 @@ class ShortsPlatformManager(
                 else -> false
             }
         }
+        
+        /**
+         * Checks if X (Twitter) Video is currently open.
+         */
+        private fun isXVideoOpen(
+            node: AccessibilityNodeInfo,
+            blockedFeatures: Set<PlatformFeatures>,
+        ): Boolean {
+            if (PlatformFeatures.X_VIDEOS !in blockedFeatures) return false
+            
+            val packageName = node.packageName?.toString() ?: X_PACKAGE
+
+            // Check for common video player view IDs
+            for (id in mXVideoViewIds) {
+                if (doesNodeByIdExists(node, "$packageName:id/$id")) {
+                    Log.d(TAG, "isXVideoOpen: Detected by View ID: $id")
+                    return true
+                }
+            }
+
+            // Fallback: Check for video player class name which is often different from the main activity
+            // The video player often uses a SurfaceView or TextureView wrapper
+            if (node.findAccessibilityNodeInfosByText("Play video").isNotEmpty() || 
+                node.findAccessibilityNodeInfosByText("Pause video").isNotEmpty() || 
+                node.findAccessibilityNodeInfosByText("video player").isNotEmpty()) {
+                Log.d(TAG, "isXVideoOpen: Detected by video text control.")
+                return true
+            }
+
+            return false
+        }
+
 
         /**
          * Checks if YouTube Shorts is currently open.
@@ -234,31 +283,43 @@ class ShortsPlatformManager(
         ): Boolean {
             if (PlatformFeatures.YOUTUBE_SHORTS !in blockedFeatures) return false
 
-            // 1. Check by Activity Class Name (very reliable if present)
-            if (className != null && className.contains("ReelWatchActivity")) return true
+            // 1. Check by Activity Class Name (Fullscreen Player)
+            if (className != null && className.contains("ReelWatchActivity")) {
+                Log.d(TAG, "isYoutubeFeatureOpen: Detected by ReelWatchActivity Class Name.")
+                return true
+            }
 
             val packageName = node.packageName?.toString() ?: YOUTUBE_PACKAGE
 
-            // 2. Check by common YouTube Shorts view IDs
+            // 2. Check by common YouTube Shorts view IDs (most reliable)
             for (id in mYtShortsViewIds) {
-                if (doesNodeByIdExists(node, "$packageName:id/$id")) return true
+                if (doesNodeByIdExists(node, "$packageName:id/$id")) {
+                    // This covers both the dedicated shorts tab/player and the shelf in the feed.
+                    Log.d(TAG, "isYoutubeFeatureOpen: Detected by View ID: $id")
+                    return true
+                }
             }
 
             // 3. Check if the "Shorts" tab is selected in the bottom navigation bar
             for (tabId in mYtShortsTabIds) {
                 val tabNodes = node.findAccessibilityNodeInfosByViewId("$packageName:id/$tabId")
                 if (tabNodes.isNotEmpty() && tabNodes.any { it.isSelected || it.parent?.isSelected == true }) {
+                    Log.d(TAG, "isYoutubeFeatureOpen: Detected by Tab ID: $tabId being selected.")
                     return true
                 }
             }
 
             // 4. Check by accessibility value (e.g., node content has a description like "YouTube Shorts")
             val shortsDescNodes = node.findAccessibilityNodeInfosByText("YouTube Shorts")
-            if (shortsDescNodes.isNotEmpty()) return true
-            
-            // 5. Fallback: check for "Shorts" text being selected (only useful for tabs/buttons)
+            if (shortsDescNodes.isNotEmpty()) {
+                Log.d(TAG, "isYoutubeFeatureOpen: Detected by Content Description 'YouTube Shorts'.")
+                return true
+            }
+
+            // 5. Fallback: check for "Shorts" text in view hierarchy (less precise, but a failsafe)
             val shortsTextNodes = node.findAccessibilityNodeInfosByText("Shorts")
-            if (shortsTextNodes.isNotEmpty() && shortsTextNodes.any { it.isSelected || it.parent?.isSelected == true }) {
+            if (shortsTextNodes.isNotEmpty() && shortsTextNodes.any { it.isSelected || it.parent?.isSelected == true || it.contentDescription?.contains("shorts", ignoreCase = true) == true }) {
+                Log.d(TAG, "isYoutubeFeatureOpen: Detected by text match 'Shorts'.")
                 return true
             }
 

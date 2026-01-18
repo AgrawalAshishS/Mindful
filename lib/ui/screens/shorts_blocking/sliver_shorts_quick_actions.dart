@@ -147,6 +147,22 @@ class SliverShortsQuickActions extends ConsumerWidget {
           ),
         ),
 
+        /// Block X (Twitter) videos
+        DefaultListTile(
+          position: ItemPosition.mid,
+          leading: _buildIcon(context, "assets/vectors/twitter.svg"),
+          enabled: haveNecessaryPerms,
+          titleText: "X (Twitter) Videos",
+          subtitleText: "Restrict autoplaying and embedded videos.",
+          switchValue: blockedFeatures.contains(PlatformFeatures.xVideos),
+          onPressed: () => _toggleFeature(
+            context,
+            ref,
+            blockedFeatures,
+            PlatformFeatures.xVideos,
+          ),
+        ),
+
         /// Block youtube shorts
         DefaultListTile(
           position: ItemPosition.mid,

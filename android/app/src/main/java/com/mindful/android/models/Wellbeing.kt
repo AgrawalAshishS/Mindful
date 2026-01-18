@@ -33,11 +33,6 @@ data class Wellbeing(
      * Set of NSFW website hosts.
      */
     val nsfwWebsites: Set<String> = emptySet(),
-
-    /**
-     * Map of website limits. (Host -> TimeLimit in ms)
-     */
-    val websiteTimeLimits: Map<String, Long> = emptyMap(),
 ) {
     companion object {
         private const val DEFAULT_SHORTS_TIME_SEC = 30 * 60
@@ -62,9 +57,6 @@ data class Wellbeing(
                 ),
                 nsfwWebsites = JsonUtils.parseStringSet(
                     jsonObject.optJSONArray("nsfwWebsites")?.toString()
-                ),
-                websiteTimeLimits = JsonUtils.parseStringLongMap(
-                    jsonObject.optJSONObject("websiteTimeLimits")?.toString()
                 ),
             )
         }
