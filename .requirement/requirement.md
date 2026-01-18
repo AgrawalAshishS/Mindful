@@ -36,3 +36,16 @@ Overall, this results in a more reliable, robust, and maintainable tracking mech
     Enforce short-form content restrictions (YouTube Shorts, Instagram Reels, etc.)
     Enforce web content restrictions (may include new time-based rules)
     Implement new database tables schema
+	
+I have defined requirement details in .requirement/requirement.md.
+- First create plan and put it in .plan folder with <date>-<time>.md file.
+- Read previous plan files to understand what was done in past.
+- Finish plan with following must haves before start coding.
+- Make sure you check why your logic should work and is it the best way of doing the work?
+- Looking to have best code at the end, so remove any unwanted old legacy code.
+- Write and run unit tests to check implemented functionality.
+- Ensure at end of your work code is formatted and compiled successfully.
+- Do not remove plan file.
+- commit your code at end with proper message.
+- Verification: Verify that app usage is correctly tracked and blocked (if restricted) using the new Accessibility-based detection.
+- Edge Cases: Watch for behavior when the Accessibility Service is toggled off/on by the system or user (logic handles this by closing/opening sessions).
