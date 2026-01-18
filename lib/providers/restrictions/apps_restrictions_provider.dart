@@ -134,8 +134,8 @@ class AppsRestrictionsNotifier
   /// Updates the max continuous usage for a specific app package.
   Future<void> updateMaxContinuousUsage(
       String appPackage, int maxContinuousUsageSec) async {
-    final restriction = state[appPackage]?.copyWith(
-            maxContinuousUsageSec: maxContinuousUsageSec) ??
+    final restriction = state[appPackage]
+            ?.copyWith(maxContinuousUsageSec: maxContinuousUsageSec) ??
         defaultAppRestrictionModel.copyWith(
           appPackage: appPackage,
           maxContinuousUsageSec: maxContinuousUsageSec,

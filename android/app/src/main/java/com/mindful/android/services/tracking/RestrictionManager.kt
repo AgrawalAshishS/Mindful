@@ -1,23 +1,22 @@
 package com.mindful.android.services.tracking
 
-import android.app.Service.USAGE_STATS_SERVICE
-import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.util.Log
 import com.mindful.android.enums.RestrictionType
-import com.mindful.android.helpers.usages.ScreenUsageHelper
+import com.mindful.android.helpers.storage.UsageDatabaseHelper
 import com.mindful.android.models.AppRestriction
 import com.mindful.android.models.RestrictionGroup
 import com.mindful.android.models.RestrictionState
 import com.mindful.android.utils.DateTimeUtils
+import java.util.Calendar
 
 class RestrictionManager(
     private val context: Context,
     private val stopIfNoUsage: () -> Unit,
-    private val usageStatsManager: UsageStatsManager = context.getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager,
     private val continuousUsageManager: ContinuousUsageManager,
 ) {
     private val TAG = "Mindful.RestrictionManager"
+    private val dbHelper = UsageDatabaseHelper.getInstance(context)
 
     val isIdle: Boolean
         get() = focusedApps.isEmpty()
@@ -201,8 +200,17 @@ class RestrictionManager(
         restriction: AppRestriction,
         futureStates: MutableSet<RestrictionState>,
     ): RestrictionState? {
-        // Usage map
-        val screenUsage = ScreenUsageHelper.fetchAppUsageTodayTillNow(usageStatsManager)
+        // Calculate Midnight
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val start = calendar.timeInMillis
+        val end = System.currentTimeMillis()
+
+        // Usage map (Seconds)
+        val screenUsage = dbHelper.queryUsageForInterval(start, end).mapValues { it.value / 1000 }
 
         /// Check for app timer
         if (restriction.timerSec > 0) {

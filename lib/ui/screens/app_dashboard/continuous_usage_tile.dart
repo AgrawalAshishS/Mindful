@@ -49,7 +49,8 @@ class ContinuousUsageTile extends ConsumerWidget {
         children: [
           ListTile(
             title: const Text("Max Continuous Usage"),
-            trailing: Text(Duration(seconds: continuousUsageSec).toTimeShort(context)),
+            trailing: Text(
+                Duration(seconds: continuousUsageSec).toTimeShort(context)),
             onTap: () async {
               final newTime = await showAppTimerPicker(
                 appInfo: appInfo,
@@ -66,7 +67,8 @@ class ContinuousUsageTile extends ConsumerWidget {
           ),
           ListTile(
             title: const Text("Break Time"),
-            trailing: Text(Duration(seconds: breakTimeSec).toTimeShort(context)),
+            trailing:
+                Text(Duration(seconds: breakTimeSec).toTimeShort(context)),
             onTap: () async {
               final newTime = await showAppTimerPicker(
                 appInfo: appInfo,

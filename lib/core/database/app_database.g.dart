@@ -192,8 +192,8 @@ class $AppRestrictionTableTable extends AppRestrictionTable
               DriftSqlType.string, data['${effectivePrefix}reminder_type'])!),
       maxContinuousUsageSec: attachedDatabase.typeMapping.read(DriftSqlType.int,
           data['${effectivePrefix}max_continuous_usage_sec'])!,
-      breakTimeSec: attachedDatabase.typeMapping.read(
-          DriftSqlType.int, data['${effectivePrefix}break_time_sec'])!,
+      breakTimeSec: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}break_time_sec'])!,
     );
   }
 
@@ -319,7 +319,8 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
       canAccessInternet: serializer.fromJson<bool>(json['canAccessInternet']),
       reminderType: $AppRestrictionTableTable.$converterreminderType
           .fromJson(serializer.fromJson<String>(json['reminderType'])),
-      maxContinuousUsageSec: serializer.fromJson<int>(json['maxContinuousUsageSec']),
+      maxContinuousUsageSec:
+          serializer.fromJson<int>(json['maxContinuousUsageSec']),
       breakTimeSec: serializer.fromJson<int>(json['breakTimeSec']),
     );
   }
@@ -371,7 +372,8 @@ class AppRestriction extends DataClass implements Insertable<AppRestriction> {
             : this.associatedGroupId,
         canAccessInternet: canAccessInternet ?? this.canAccessInternet,
         reminderType: reminderType ?? this.reminderType,
-        maxContinuousUsageSec: maxContinuousUsageSec ?? this.maxContinuousUsageSec,
+        maxContinuousUsageSec:
+            maxContinuousUsageSec ?? this.maxContinuousUsageSec,
         breakTimeSec: breakTimeSec ?? this.breakTimeSec,
       );
   AppRestriction copyWithCompanion(AppRestrictionTableCompanion data) {
@@ -547,7 +549,8 @@ class AppRestrictionTableCompanion extends UpdateCompanion<AppRestriction> {
       associatedGroupId: associatedGroupId ?? this.associatedGroupId,
       canAccessInternet: canAccessInternet ?? this.canAccessInternet,
       reminderType: reminderType ?? this.reminderType,
-      maxContinuousUsageSec: maxContinuousUsageSec ?? this.maxContinuousUsageSec,
+      maxContinuousUsageSec:
+          maxContinuousUsageSec ?? this.maxContinuousUsageSec,
       breakTimeSec: breakTimeSec ?? this.breakTimeSec,
       rowid: rowid ?? this.rowid,
     );

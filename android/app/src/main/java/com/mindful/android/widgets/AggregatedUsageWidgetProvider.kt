@@ -3,7 +3,6 @@ package com.mindful.android.widgets
 import android.app.PendingIntent
 import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager
-import android.app.usage.UsageStatsManager
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
@@ -15,12 +14,13 @@ import android.widget.RemoteViews
 import androidx.annotation.MainThread
 import com.mindful.android.R
 import com.mindful.android.helpers.storage.SharedPrefsHelper
+import com.mindful.android.helpers.storage.UsageDatabaseHelper
 import com.mindful.android.helpers.usages.NetworkUsageHelper
-import com.mindful.android.helpers.usages.ScreenUsageHelper
 import com.mindful.android.utils.AppUtils
 import com.mindful.android.utils.DateTimeUtils
 import com.mindful.android.utils.ThreadUtils
 import com.mindful.android.utils.Utils
+import java.util.Calendar
 
 class AggregatedUsageWidgetProvider : AppWidgetProvider() {
     companion object {
@@ -86,14 +86,23 @@ class AggregatedUsageWidgetProvider : AppWidgetProvider() {
     ) {
         runCatching {
             Thread {
-                val usageStatsManager =
-                    context.applicationContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+                val dbHelper = UsageDatabaseHelper.getInstance(context)
                 val networkStatsManager =
                     context.applicationContext.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
 
+                // Calculate Midnight
+                val calendar = Calendar.getInstance()
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+                val start = calendar.timeInMillis
+                val end = System.currentTimeMillis()
+
                 // Fetch usages
-                val screenUsageOneDay =
-                    ScreenUsageHelper.fetchAppUsageTodayTillNow(usageStatsManager)
+                val screenUsageOneDay = dbHelper.queryUsageForInterval(start, end)
+                    .mapValues { it.value / 1000 } // Convert to seconds
+
                 val mobileUsageOneDay =
                     NetworkUsageHelper.fetchNetworkUsageForTodayTillNow(
                         networkStatsManager,

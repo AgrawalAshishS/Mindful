@@ -1,7 +1,6 @@
 package com.mindful.android.widgets
 
 import android.app.PendingIntent
-import android.app.usage.UsageStatsManager
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
@@ -14,10 +13,11 @@ import android.widget.RemoteViews
 import androidx.annotation.MainThread
 import com.mindful.android.R
 import com.mindful.android.helpers.storage.SharedPrefsHelper
-import com.mindful.android.helpers.usages.ScreenUsageHelper
+import com.mindful.android.helpers.storage.UsageDatabaseHelper
 import com.mindful.android.utils.AppUtils
 import com.mindful.android.utils.DateTimeUtils
 import com.mindful.android.utils.ThreadUtils
+import java.util.Calendar
 
 class ScreenUsageWidgetProvider : AppWidgetProvider() {
     companion object {
@@ -83,8 +83,7 @@ class ScreenUsageWidgetProvider : AppWidgetProvider() {
         runCatching {
             Thread {
                 val packageManager = context.packageManager
-                val usageStatsManager =
-                    context.applicationContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+                val dbHelper = UsageDatabaseHelper.getInstance(context)
 
                 val excludedApps = SharedPrefsHelper.getSetExcludedApps(context, null)
                 val launchableApps = packageManager.queryIntentActivities(
@@ -92,11 +91,22 @@ class ScreenUsageWidgetProvider : AppWidgetProvider() {
                     0
                 ).map { it.activityInfo.packageName }.toSet()
 
+                // Calculate Midnight
+                val calendar = Calendar.getInstance()
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+                val start = calendar.timeInMillis
+                val end = System.currentTimeMillis()
+
                 // Filter
                 val usageMap =
-                    ScreenUsageHelper.fetchAppUsageTodayTillNow(usageStatsManager).filter {
-                        launchableApps.contains(it.key) && !excludedApps.contains(it.key)
-                    }
+                    dbHelper.queryUsageForInterval(start, end)
+                        .mapValues { it.value / 1000 } // Convert to seconds
+                        .filter {
+                            launchableApps.contains(it.key) && !excludedApps.contains(it.key)
+                        }
 
                 // Fold
                 val totalUsageMinutes = (usageMap.values.sum() / 60) // To minutes
