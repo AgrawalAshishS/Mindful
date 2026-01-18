@@ -205,13 +205,28 @@ class ShortsPlatformManager(
             "shelf_content"
         )
 
+
+		/*private val mXImmersiveViewIds = listOf(
+            "player_surface_view", // Main video playback surface
+            "video_overlay_gradient", // Video overlay used by player
+            "video_player_controls", // Player controls bar
+            "tweet_video_player", // Container for embedded player
+            "video_timeline_container", 
+            "player_controls_container",
+            "video_view", // Common generic ID
+            "av_player_view",
+            "video_container",
+            "immersive_media_viewer_container", // The main container for full screen media
+            "dock_video_view",
+			"gallery_root", // Often used when viewing media in isolation
+			"video_dock_container" // When video is docked/expanded?
+        )*/
+		
         // Common View IDs for X/Twitter Videos (Restricted to Fullscreen/Immersive)
         private val mXImmersiveViewIds = listOf(
-            "immersive_media_viewer_container", // The main container for full screen media
-            "gallery_root", // Often used when viewing media in isolation
-            "video_dock_container" // When video is docked/expanded?
-            ,"playback_speed_button"
+            "playback_speed_button"
         )
+		
 
         // Common View IDs for YouTube bottom tabs
         private val mYtShortsTabIds = listOf("menu_shorts", "pivot_shorts", "shorts_tab")
@@ -252,14 +267,13 @@ class ShortsPlatformManager(
             if (PlatformFeatures.X_VIDEOS !in blockedFeatures) return false
             
             // 1. Check for Gallery/Media Activity Class
-            if (className != null && (className.contains("GalleryActivity") || className.contains("VideoPlayerActivity"))) {
+            //if (className != null && (className.contains("GalleryActivity") || className.contains("VideoPlayerActivity"))) {
+            if (className != null && className.contains("VideoPlayerActivity")) {
                 Log.d(TAG, "isXVideoOpen: Detected by Activity Class Name: $className")
                 return true
             }
             
             val packageName = node.packageName?.toString() ?: X_PACKAGE
-
-            Log.d(packageName, "Ashish: This is the package name: $packageName:id")
 
             // Log hierarchy for debugging
             val packageNameForLog = node.packageName?.toString() ?: X_PACKAGE
