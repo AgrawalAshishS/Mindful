@@ -58,7 +58,7 @@ class ShortsPlatformManager(
             FACEBOOK_PACKAGE -> isFacebookFeatureOpen(node, blockedFeatures)
             REDDIT_PACKAGE -> isRedditFeatureOpen(node, blockedFeatures)
             YOUTUBE_PACKAGE -> isYoutubeFeatureOpen(node, blockedFeatures, className)
-            X_PACKAGE -> isXVideoOpen(node, blockedFeatures)
+            X_PACKAGE -> isXVideoOpen(node, blockedFeatures, className)
             else -> false
         }
 
@@ -205,19 +205,12 @@ class ShortsPlatformManager(
             "shelf_content"
         )
 
-        // Common View IDs for X/Twitter Videos
-        private val mXVideoViewIds = listOf(
-            "player_surface_view", // Main video playback surface
-            "video_overlay_gradient", // Video overlay used by player
-            "video_player_controls", // Player controls bar
-            "tweet_video_player", // Container for embedded player
-            "video_timeline_container", 
-            "player_controls_container",
-            "video_view", // Common generic ID
-            "av_player_view",
-            "video_container",
-            "immersive_media_viewer_container", // Fullscreen viewer
-            "dock_video_view"
+        // Common View IDs for X/Twitter Videos (Restricted to Fullscreen/Immersive)
+        private val mXImmersiveViewIds = listOf(
+            "immersive_media_viewer_container", // The main container for full screen media
+            "gallery_root", // Often used when viewing media in isolation
+            "video_dock_container" // When video is docked/expanded?
+            ,"playback_speed_button"
         )
 
         // Common View IDs for YouTube bottom tabs
@@ -254,35 +247,58 @@ class ShortsPlatformManager(
         private fun isXVideoOpen(
             node: AccessibilityNodeInfo,
             blockedFeatures: Set<PlatformFeatures>,
+            className: String? = null
         ): Boolean {
             if (PlatformFeatures.X_VIDEOS !in blockedFeatures) return false
             
+            // 1. Check for Gallery/Media Activity Class
+            if (className != null && (className.contains("GalleryActivity") || className.contains("VideoPlayerActivity"))) {
+                Log.d(TAG, "isXVideoOpen: Detected by Activity Class Name: $className")
+                return true
+            }
+            
             val packageName = node.packageName?.toString() ?: X_PACKAGE
 
-            // 1. Check for common video player view IDs (most reliable)
-            for (id in mXVideoViewIds) {
+            Log.d(packageName, "Ashish: This is the package name: $packageName:id")
+
+            // Log hierarchy for debugging
+            val packageNameForLog = node.packageName?.toString() ?: X_PACKAGE
+            /*if (packageNameForLog == X_PACKAGE) {
+                 Log.d(TAG, "Checking X Video Open...")
+                 logNodeHierarchy(node)
+            }*/
+
+
+            // 2. Strict Check: Only block if we are in the immersive/fullscreen viewer
+            for (id in mXImmersiveViewIds) {
                 if (doesNodeByIdExists(node, "$packageName:id/$id")) {
-                    Log.d(TAG, "isXVideoOpen: Detected by View ID: $id")
+                    Log.d(TAG, "isXVideoOpen: Detected by Immersive View ID: $id")
                     return true
                 }
             }
 
-            // 2. Aggressive Fallback: Check for video player controls text
-            if (node.findAccessibilityNodeInfosByText("Play video").isNotEmpty() || 
-                node.findAccessibilityNodeInfosByText("Pause video").isNotEmpty() || 
-                node.findAccessibilityNodeInfosByText("video player").isNotEmpty() ||
-                node.findAccessibilityNodeInfosByText("full-screen video").isNotEmpty() ||
-                node.findAccessibilityNodeInfosByText("Playback speed").isNotEmpty()) {
-                Log.d(TAG, "isXVideoOpen: Detected by video text control (aggressive).")
-                return true
-            }
-            
-            // 3. Last resort: SurfaceView/TextureView check
-            // Note: findAccessibilityNodeInfosByClassName is not standard Android API for AccessibilityNodeInfo.
-            // We must traverse manually or skip. For now, skipping to fix build.
-            // If deeper inspection is needed, a recursive traversal helper is required.
-
             return false
+        }
+
+
+        private fun logNodeHierarchy(node: AccessibilityNodeInfo, depth: Int = 0) {
+            val sb = StringBuilder()
+            repeat(depth) { sb.append("  ") }
+            sb.append("class=").append(node.className)
+            if (node.viewIdResourceName != null) sb.append(", id=").append(node.viewIdResourceName)
+            if (node.text != null) sb.append(", text=").append(node.text)
+            if (node.contentDescription != null) sb.append(", desc=").append(node.contentDescription)
+            
+            Log.d(TAG, sb.toString())
+
+            val count = node.childCount
+            for (i in 0 until count) {
+                val child = node.getChild(i)
+                if (child != null) {
+                    logNodeHierarchy(child, depth + 1)
+                    child.recycle()
+                }
+            }
         }
 
 
