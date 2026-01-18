@@ -294,12 +294,8 @@ class FgMethodCallHandler(
             }
 
             "getAndAskUsageAccessPermission" -> {
-                result.success(
-                    PermissionsHelper.getAndAskUsageAccessPermission(
-                        context,
-                        call.arguments() ?: false
-                    )
-                )
+                // Deprecated: Usage Access is no longer required. Mocking true.
+                result.success(true)
             }
 
             "getAndAskIgnoreBatteryOptimizationPermission" -> {

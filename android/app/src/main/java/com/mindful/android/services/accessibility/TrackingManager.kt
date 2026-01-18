@@ -2,6 +2,7 @@ package com.mindful.android.services.accessibility
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.util.Log
 import androidx.annotation.WorkerThread
 import com.mindful.android.AppConstants.SYSTEM_UI_PACKAGE
@@ -29,7 +30,12 @@ class TrackingManager(
 
     @WorkerThread
     fun onNewEvent(packageName: String) {
-        if (isPaused || packageName == SYSTEM_UI_PACKAGE) return
+        if (isPaused) return
+
+        val isHomeOrSystem = packageName == SYSTEM_UI_PACKAGE || isLauncher(packageName)
+
+        // optimize: if we are already in "no app" state and receive home/system event, ignore
+        if (lastActiveApp.isEmpty() && isHomeOrSystem) return
 
         if (lastActiveApp != packageName) {
             val currentTime = System.currentTimeMillis()
@@ -39,12 +45,23 @@ class TrackingManager(
                 dbHelper.insertUsageSession(lastActiveApp, sessionStartTime, currentTime)
             }
 
-            // Start new session
-            lastActiveApp = packageName
-            sessionStartTime = currentTime
-
-            onNewAppLaunched(packageName)
+            if (isHomeOrSystem) {
+                lastActiveApp = ""
+                // No new session started
+            } else {
+                // Start new session
+                lastActiveApp = packageName
+                sessionStartTime = currentTime
+                onNewAppLaunched(packageName)
+            }
         }
+    }
+
+    private fun isLauncher(packageName: String): Boolean {
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val resolveInfo =
+            context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        return packageName == resolveInfo?.activityInfo?.packageName
     }
 
     fun pauseTracking() {

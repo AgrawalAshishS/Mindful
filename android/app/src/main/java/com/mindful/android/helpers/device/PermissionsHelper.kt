@@ -17,7 +17,7 @@ import android.app.Activity
 import android.app.AlarmManager
 import android.app.NotificationManager
 import android.app.admin.DevicePolicyManager
-import android.app.usage.UsageStatsManager
+
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
@@ -97,37 +97,7 @@ object PermissionsHelper {
         return false
     }
 
-    /**
-     * Checks if the usage access permission is granted and optionally asks for it if not granted.
-     *
-     * @param context          The application context used to check permissions and start activities.
-     * @param askPermissionToo Whether to prompt the user to enable usage access permission if not granted.
-     * @return True if usage access permission is granted, false otherwise.
-     */
-    fun getAndAskUsageAccessPermission(context: Context, askPermissionToo: Boolean): Boolean {
-        val usageStatsManager =
-            context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val now = System.currentTimeMillis()
-        val haveUsage =
-            usageStatsManager.queryAndAggregateUsageStats(now - AppConstants.ONE_DAY_IN_MS, now)
-                .isNotEmpty()
 
-        if (haveUsage) return true
-
-        if (askPermissionToo) {
-            try {
-                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-                    .setData("package:${context.packageName}".toUri())
-
-                context.startActivity(intent)
-            } catch (e: ActivityNotFoundException) {
-                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-                context.startActivity(intent)
-            }
-        }
-
-        return false
-    }
 
 
     /**
