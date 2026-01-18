@@ -203,7 +203,6 @@ class ShortsPlatformManager(
         // YouTube Shorts Activity Class Name
         private const val YOUTUBE_SHORTS_ACTIVITY = "com.google.android.apps.youtube.app.extensions.reels.watch.activity.ReelWatchActivity"
 
-
         /**
          * Checks if Instagram features (Reels or Search Feed) are open.
          */
@@ -248,18 +247,16 @@ class ShortsPlatformManager(
             // 3. Check if the "Shorts" tab is selected in the bottom navigation bar
             for (tabId in mYtShortsTabIds) {
                 val tabNodes = node.findAccessibilityNodeInfosByViewId("$packageName:id/$tabId")
-                if (tabNodes.isNotEmpty() && tabNodes.any { it.isSelected || it.parent?.isSelected == true || it.isClickable }) {
-                    // Note: isClickable check is risky but some versions use it for selected state visual
-                    // Better to stick to isSelected if possible.
-                    if (tabNodes.any { it.isSelected || it.parent?.isSelected == true }) return true
+                if (tabNodes.isNotEmpty() && tabNodes.any { it.isSelected || it.parent?.isSelected == true }) {
+                    return true
                 }
             }
 
-            // 4. Check by description (often "Shorts")
-            val rootNode = node
-            if (rootNode.contentDescription?.toString()?.contains("Shorts", ignoreCase = true) == true) return true
-
-            // 5. Fallback: check for "Shorts" text being selected
+            // 4. Check by accessibility value (e.g., node content has a description like "YouTube Shorts")
+            val shortsDescNodes = node.findAccessibilityNodeInfosByText("YouTube Shorts")
+            if (shortsDescNodes.isNotEmpty()) return true
+            
+            // 5. Fallback: check for "Shorts" text being selected (only useful for tabs/buttons)
             val shortsTextNodes = node.findAccessibilityNodeInfosByText("Shorts")
             if (shortsTextNodes.isNotEmpty() && shortsTextNodes.any { it.isSelected || it.parent?.isSelected == true }) {
                 return true
