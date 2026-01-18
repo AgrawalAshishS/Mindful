@@ -1,40 +1,46 @@
-# Implementation Plan: Accessibility Service-only Tracking
+# Implementation Plan: Transition to Accessibility Service-only Architecture
 
-## 1. Refactor Logic to Remove Usage Stats Dependency
-
-### A. Update `RestrictionManager.kt`
-*   **Goal**: Remove `UsageStatsManager` and use `UsageDatabaseHelper` for usage limits.
+## 1. Data Persistence & Communication
+*   **Goal**: Replace Service Binding with Shared Preferences for communicating restrictions to `MindfulAccessibilityService`.
 *   **Changes**:
-    *   Remove `usageStatsManager` from constructor.
-    *   Instantiate `UsageDatabaseHelper`.
-    *   In `evaluateScreenTimeLimit`:
-        *   Calculate start of day (Midnight).
-        *   Call `dbHelper.queryUsageForInterval(midnight, now)`.
-        *   Convert results from milliseconds to seconds.
-        *   Use this map for logic.
+    *   **`SharedPrefsHelper`**: Add methods to get/set:
+        *   `AppRestrictions` (JSON String)
+        *   `RestrictionGroups` (JSON String)
+        *   `FocusedApps` (Set<String>)
+        *   `BedtimeApps` (Set<String>)
+    *   **`UsageDatabaseHelper`**: Add `getAppLaunchCount(packageName, startTime, endTime)` to replace in-memory counting.
 
-### B. Update `MindfulTrackerService.kt`
-*   **Goal**: Clean up `RestrictionManager` instantiation.
+## 2. Refactor `MindfulAccessibilityService`
+*   **Goal**: Make it the central hub for restriction enforcement.
 *   **Changes**:
-    *   Remove any reference to `UsageStatsManager` (though likely implicitly handled by removing it from `RestrictionManager` constructor).
+    *   Instantiate `OverlayManager`, `ReminderManager`, `ContinuousUsageManager`, `RestrictionManager`.
+    *   Implement `onSharedPreferenceChanged` to reload restrictions/focus/bedtime apps into `RestrictionManager`.
+    *   Initialize `RestrictionManager` with data from `SharedPrefs` on startup.
+    *   Integrate `onNewAppLaunch` logic (moved from `TrackerService`).
+    *   Hook `TrackingManager` events to `onNewAppLaunch`.
 
-### C. Delete `ScreenUsageHelper.kt`
-*   **Goal**: Cleanup.
-*   **Changes**: Delete file.
+## 3. Update External Callers
+*   **`FgMethodCallHandler`**:
+    *   Remove `MindfulTrackerService` binding.
+    *   Update methods (`updateAppRestrictions`, etc.) to write to `SharedPrefsHelper`.
+    *   Update `getAppsLaunchCount` to query `UsageDatabaseHelper`.
+*   **`FocusSessionService`**:
+    *   Remove `MindfulTrackerService` binding.
+    *   Update start/stop/update logic to write `FocusedApps` to `SharedPrefsHelper`.
 
-## 2. Unit Testing
-*   **Goal**: Verify new DB logic works correctly.
+## 4. Cleanup
+*   **Delete**:
+    *   `MindfulTrackerService.kt`
+    *   `LaunchTrackingManager.kt`
+*   **Update `AndroidManifest.xml`**: Remove `MindfulTrackerService`.
+*   **Update `DeviceBootReceiver`**: Remove `MindfulTrackerService` start logic.
+
+## 5. Verification
 *   **Tests**:
-    *   `UsageDatabaseHelperTest`:
-        *   Test `insertUsageSession`.
-        *   Test `queryUsageForInterval` (overlapping, contained, partial overlap).
+    *   Verify `UsageDatabaseHelper.getLaunchCount`.
+    *   Verify `RestrictionManager` logic with mocked DB/Prefs.
+*   **Manual**: Check if restrictions apply immediately after saving settings in Flutter.
 
-## 3. Verification & Formatting
-*   **Goal**: Ensure code compiles and looks good.
-*   **Steps**:
-    *   Run `flutter pub get`.
-    *   Run `dart format .`.
-    *   Verify `gradle` build (via shell if possible, or assume correctness based on previous steps).
-
-## 4. Final Commit
-*   **Goal**: Commit changes.
+## 6. Edge Cases
+*   **Service Restart**: `MindfulAccessibilityService` reads Prefs on `onServiceConnected`, ensuring state restoration.
+*   **Race Conditions**: SharedPrefs listener ensures updates are propagated.

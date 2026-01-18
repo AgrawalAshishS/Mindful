@@ -11,22 +11,25 @@ import com.mindful.android.helpers.storage.UsageDatabaseHelper
 
 class TrackingManager(
     private val context: Context,
+    private val onNewAppLaunched: (String) -> Unit,
 ) {
 
     companion object {
         const val ACTION_ACCESSIBILITY_ACTIVE = "com.mindful.android.action.accessibilityActive"
         const val ACTION_ACCESSIBILITY_INACTIVE = "com.mindful.android.action.accessibilityInactive"
-        const val ACTION_NEW_APP_LAUNCHED = "com.mindful.android.action.newAppLaunched"
         const val EXTRA_PACKAGE_NAME: String = "com.mindful.android.extra.packageName"
     }
 
     private var lastActiveApp: String = ""
+    val getLastActiveApp: String get() = lastActiveApp
+    
     private var sessionStartTime: Long = 0L
+    private var isPaused: Boolean = false
     private val dbHelper = UsageDatabaseHelper.getInstance(context)
 
     @WorkerThread
     fun onNewEvent(packageName: String) {
-        if (packageName == SYSTEM_UI_PACKAGE) return
+        if (isPaused || packageName == SYSTEM_UI_PACKAGE) return
 
         if (lastActiveApp != packageName) {
             val currentTime = System.currentTimeMillis()
@@ -40,10 +43,17 @@ class TrackingManager(
             lastActiveApp = packageName
             sessionStartTime = currentTime
 
-            broadcastEvent(ACTION_NEW_APP_LAUNCHED, packageName)
+            onNewAppLaunched(packageName)
         }
     }
 
+    fun pauseTracking() {
+        isPaused = true
+    }
+
+    fun resumeTracking() {
+        isPaused = false
+    }
 
     // Called when accessibility service is stopped
     fun startManualTracking() {

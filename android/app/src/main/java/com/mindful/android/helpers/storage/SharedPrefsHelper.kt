@@ -37,6 +37,10 @@ object SharedPrefsHelper {
     private var mListenablePrefs: SharedPreferences? = null
     private const val LISTENABLE_PREFS_BOX = "UniquePrefs"
     const val PREF_KEY_WELLBEING_SETTINGS: String = "wellBeingSettings"
+    const val PREF_KEY_APP_RESTRICTIONS = "appRestrictions"
+    const val PREF_KEY_RESTRICTION_GROUPS = "restrictionGroups"
+    const val PREF_KEY_FOCUSED_APPS = "focusedApps"
+    const val PREF_KEY_BEDTIME_APPS = "bedtimeApps"
 
     private var mCrashLogPrefs: SharedPreferences? = null
     private const val CRASH_LOG_PREFS_BOX = "CrashLogPrefs"
@@ -109,6 +113,46 @@ object SharedPrefsHelper {
             mListenablePrefs!!.edit().putString(PREF_KEY_WELLBEING_SETTINGS, jsonWellBeing)
                 .apply()
             return Wellbeing.fromJson(jsonWellBeing)
+        }
+    }
+
+    fun getSetAppRestrictions(context: Context, json: String?): String {
+        checkAndInitializeListenablePrefs(context)
+        if (json == null) {
+            return mListenablePrefs!!.getString(PREF_KEY_APP_RESTRICTIONS, "{}")!!
+        } else {
+            mListenablePrefs!!.edit().putString(PREF_KEY_APP_RESTRICTIONS, json).apply()
+            return json
+        }
+    }
+
+    fun getSetRestrictionGroups(context: Context, json: String?): String {
+        checkAndInitializeListenablePrefs(context)
+        if (json == null) {
+            return mListenablePrefs!!.getString(PREF_KEY_RESTRICTION_GROUPS, "{}")!!
+        } else {
+            mListenablePrefs!!.edit().putString(PREF_KEY_RESTRICTION_GROUPS, json).apply()
+            return json
+        }
+    }
+
+    fun getSetFocusedApps(context: Context, apps: Set<String>?): Set<String> {
+        checkAndInitializeListenablePrefs(context)
+        if (apps == null) {
+            return mListenablePrefs!!.getStringSet(PREF_KEY_FOCUSED_APPS, emptySet())!!
+        } else {
+            mListenablePrefs!!.edit().putStringSet(PREF_KEY_FOCUSED_APPS, apps).apply()
+            return apps
+        }
+    }
+
+    fun getSetBedtimeApps(context: Context, apps: Set<String>?): Set<String> {
+        checkAndInitializeListenablePrefs(context)
+        if (apps == null) {
+            return mListenablePrefs!!.getStringSet(PREF_KEY_BEDTIME_APPS, emptySet())!!
+        } else {
+            mListenablePrefs!!.edit().putStringSet(PREF_KEY_BEDTIME_APPS, apps).apply()
+            return apps
         }
     }
 

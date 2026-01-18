@@ -122,4 +122,36 @@ class UsageDatabaseHelper(context: Context) :
 
         return usageMap
     }
+
+    /**
+     * Counts the number of times each app was launched (sessions started) within the interval.
+     */
+    fun getAppLaunchCounts(startTime: Long, endTime: Long): Map<String, Int> {
+        val launchMap = ConcurrentHashMap<String, Int>()
+        val db = readableDatabase
+
+        val selection = "$COLUMN_START_TIME >= ? AND $COLUMN_START_TIME <= ?"
+        val selectionArgs = arrayOf(startTime.toString(), endTime.toString())
+
+        val cursor = db.query(
+            TABLE_USAGE,
+            arrayOf(COLUMN_PACKAGE_NAME),
+            selection,
+            selectionArgs,
+            null,
+            null,
+            null
+        )
+
+        cursor.use {
+            if (it.moveToFirst()) {
+                val pkgIndex = it.getColumnIndex(COLUMN_PACKAGE_NAME)
+                do {
+                    val pkg = it.getString(pkgIndex)
+                    launchMap[pkg] = launchMap.getOrDefault(pkg, 0) + 1
+                } while (it.moveToNext())
+            }
+        }
+        return launchMap
+    }
 }

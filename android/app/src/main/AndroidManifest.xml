@@ -231,11 +231,6 @@
                 android:value="false" />
         </service>
         <service
-            android:name=".services.tracking.MindfulTrackerService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="specialUse" />
-        <service
             android:name=".services.timer.FocusSessionService"
             android:enabled="true"
             android:exported="false"

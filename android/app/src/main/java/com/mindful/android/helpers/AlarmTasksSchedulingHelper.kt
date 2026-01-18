@@ -19,6 +19,7 @@ import android.os.Build
 import android.util.Log
 import com.mindful.android.AppConstants
 import com.mindful.android.generics.SafeServiceConnection
+import com.mindful.android.helpers.storage.SharedPrefsHelper
 import com.mindful.android.models.BedtimeSchedule
 import com.mindful.android.models.NotificationSettings
 import com.mindful.android.receivers.alarm.BedtimeRoutineReceiver
@@ -27,7 +28,6 @@ import com.mindful.android.receivers.alarm.MidnightResetReceiver
 import com.mindful.android.receivers.alarm.NotificationBatchReceiver
 import com.mindful.android.receivers.alarm.NotificationBatchReceiver.Companion.EXTRA_NOTIFICATION_SETTINGS_JSON
 import com.mindful.android.receivers.alarm.NotificationBatchReceiver.NotificationBatchWorker
-import com.mindful.android.services.tracking.MindfulTrackerService
 import com.mindful.android.utils.DateTimeUtils.todToTodayCal
 import com.mindful.android.utils.Utils
 import java.util.Calendar
@@ -172,18 +172,8 @@ object AlarmTasksSchedulingHelper {
         )
 
         // Let service know
-        runCatching {
-            if (Utils.isServiceRunning(context, MindfulTrackerService::class.java)) {
-                val conn = SafeServiceConnection(context, MindfulTrackerService::class.java)
-                conn.setOnConnectedCallback { service ->
-                    service.getRestrictionManager.updateBedtimeApps(
-                        null
-                    )
-                }
-                conn.bindService()
-                conn.unBindService()
-            }
-        }
+        SharedPrefsHelper.getSetBedtimeApps(context, emptySet())
+        
         Log.d(TAG, "cancelBedtimeRoutineTasks: Bedtime routine tasks cancelled successfully")
     }
 

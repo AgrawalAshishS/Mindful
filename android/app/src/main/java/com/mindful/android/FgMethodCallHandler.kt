@@ -18,17 +18,16 @@ import com.mindful.android.helpers.device.NewActivitiesLaunchHelper
 import com.mindful.android.helpers.device.NotificationHelper
 import com.mindful.android.helpers.device.PermissionsHelper
 import com.mindful.android.helpers.storage.SharedPrefsHelper
+import com.mindful.android.helpers.storage.UsageDatabaseHelper
 import com.mindful.android.helpers.usages.AppsUsageHelper.getAppsUsageForInterval
-import com.mindful.android.models.AppRestriction
 import com.mindful.android.models.BedtimeSchedule
 import com.mindful.android.models.FocusSession
 import com.mindful.android.models.Notification
 import com.mindful.android.models.NotificationSettings
-import com.mindful.android.models.RestrictionGroup
+import com.mindful.android.services.accessibility.MindfulAccessibilityService
 import com.mindful.android.services.notification.MindfulNotificationListenerService
 import com.mindful.android.services.timer.EmergencyPauseService
 import com.mindful.android.services.timer.FocusSessionService
-import com.mindful.android.services.tracking.MindfulTrackerService
 import com.mindful.android.services.vpn.MindfulVpnService
 import com.mindful.android.utils.AppUtils
 import com.mindful.android.utils.JsonUtils
@@ -36,6 +35,7 @@ import com.mindful.android.utils.Utils
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import java.util.Calendar
 import java.util.Locale
 
 class FgMethodCallHandler(
@@ -48,12 +48,6 @@ class FgMethodCallHandler(
         SafeServiceConnection(
             context = context,
             serviceClass = FocusSessionService::class.java
-        )
-
-    private val trackerServiceConn =
-        SafeServiceConnection(
-            context = context,
-            serviceClass = MindfulTrackerService::class.java
         )
 
     private val vpnServiceConn =
@@ -71,7 +65,6 @@ class FgMethodCallHandler(
 
     init {
         // Bind to Services if they are already running
-        trackerServiceConn.bindService()
         vpnServiceConn.bindService()
         notificationServiceConn.bindService()
         focusServiceConn.bindService()
@@ -80,7 +73,6 @@ class FgMethodCallHandler(
 
     fun dispose() {
         // Unbind all services
-        trackerServiceConn.unBindService()
         vpnServiceConn.unBindService()
         notificationServiceConn.unBindService()
         focusServiceConn.unBindService()
@@ -133,9 +125,16 @@ class FgMethodCallHandler(
             }
 
             "getAppsLaunchCount" -> {
+                val calendar = Calendar.getInstance()
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+                val start = calendar.timeInMillis
+                val end = System.currentTimeMillis()
+
                 result.success(
-                    trackerServiceConn.service?.getRestrictionManager?.getAppsLaunchCount
-                        ?: mapOf<String, Int>()
+                    UsageDatabaseHelper.getInstance(context).getAppLaunchCounts(start, end)
                 )
             }
 
@@ -157,18 +156,18 @@ class FgMethodCallHandler(
             // ==============================================================================================================
 
             "updateAppRestrictions" -> {
-                val appRestrictions = JsonUtils.parseAppRestrictionsMap(
+                SharedPrefsHelper.getSetAppRestrictions(
+                    context,
                     call.arguments() ?: ""
                 )
-                updateTrackerServiceRestrictions(appRestrictions, null)
                 result.success(true)
             }
 
             "updateRestrictionsGroups" -> {
-                val restrictionGroups = JsonUtils.parseRestrictionGroupsMap(
+                SharedPrefsHelper.getSetRestrictionGroups(
+                    context,
                     call.arguments() ?: ""
                 )
-                updateTrackerServiceRestrictions(null, restrictionGroups)
                 result.success(true)
             }
 
@@ -189,7 +188,6 @@ class FgMethodCallHandler(
             }
 
             "updateWellBeingSettings" -> {
-                // NOTE: Only updating shared prefs because accessibility service have onSharedPrefsChange listener registered which will eventually reload needed data
                 SharedPrefsHelper.getSetWellBeingSettings(
                     context,
                     call.arguments() ?: ""
@@ -213,7 +211,7 @@ class FgMethodCallHandler(
 
             "activeEmergencyPause" -> {
                 if (!Utils.isServiceRunning(context, EmergencyPauseService::class.java)
-                    && Utils.isServiceRunning(context, MindfulTrackerService::class.java)
+                    && Utils.isServiceRunning(context, MindfulAccessibilityService::class.java)
                 ) {
                     context.startService(
                         Intent(context, EmergencyPauseService::class.java).setAction(
@@ -431,37 +429,6 @@ class FgMethodCallHandler(
             }
 
             else -> result.notImplemented()
-        }
-    }
-
-
-    /**
-     * Updates app and group restrictions in the tracker service.
-     * If the service is connected, sends updates directly; otherwise,
-     * sets a callback to update once the connection is established and starts the service.
-     *
-     * @param appRestrictions   a map of app package names to their respective restrictions,
-     * or null if only group restrictions are being updated.
-     * @param restrictionGroups a map of restriction group IDs to their respective restrictions,
-     * or null if only app-specific restrictions are being updated.
-     */
-    private fun updateTrackerServiceRestrictions(
-        appRestrictions: HashMap<String, AppRestriction>?,
-        restrictionGroups: HashMap<Int, RestrictionGroup>?,
-    ) {
-        if (trackerServiceConn.isActive) {
-            trackerServiceConn.service?.getRestrictionManager?.updateRestrictions(
-                appRestrictions,
-                restrictionGroups
-            )
-        } else if (appRestrictions?.isNotEmpty() == true || restrictionGroups?.isNotEmpty() == true) {
-            trackerServiceConn.setOnConnectedCallback { service ->
-                service.getRestrictionManager.updateRestrictions(
-                    appRestrictions,
-                    restrictionGroups
-                )
-            }
-            trackerServiceConn.startAndBind()
         }
     }
 

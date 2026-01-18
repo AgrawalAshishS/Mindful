@@ -31,7 +31,6 @@ import com.mindful.android.helpers.AlarmTasksSchedulingHelper.scheduleBedtimeRou
 import com.mindful.android.helpers.device.NotificationHelper
 import com.mindful.android.helpers.storage.SharedPrefsHelper
 import com.mindful.android.models.BedtimeSchedule
-import com.mindful.android.services.tracking.MindfulTrackerService
 import com.mindful.android.utils.AppUtils
 import com.mindful.android.utils.DateTimeUtils
 import com.mindful.android.utils.ThreadUtils
@@ -78,11 +77,6 @@ class BedtimeRoutineReceiver : BroadcastReceiver() {
         private val canStartRoutineToday: Boolean =
             bedtimeSchedule.scheduleDays[DateTimeUtils.zeroIndexedDayOfWeek()]
 
-        private val trackerServiceConn = SafeServiceConnection(
-            context = context,
-            serviceClass = MindfulTrackerService::class.java
-        )
-
 
         override fun doWork(): Result {
             try {
@@ -108,21 +102,12 @@ class BedtimeRoutineReceiver : BroadcastReceiver() {
                 Log.e(TAG, "doWork: Error during work execution", e)
                 SharedPrefsHelper.insertCrashLogToPrefs(context, e)
                 return Result.failure()
-            } finally {
-                // Unbind service
-                trackerServiceConn.unBindService()
             }
         }
 
         private fun startBedtimeRoutine() {
             if (!canStartRoutineToday) return
-            trackerServiceConn.setOnConnectedCallback { service: MindfulTrackerService ->
-                with(service) {
-                    getRestrictionManager.updateBedtimeApps(bedtimeSchedule.distractingApps)
-                    getLaunchTrackingManager.detectActiveAppForBedtime()
-                }
-            }
-            trackerServiceConn.startAndBind()
+            SharedPrefsHelper.getSetBedtimeApps(context, bedtimeSchedule.distractingApps)
 
             // Start DND if needed
             if (bedtimeSchedule.shouldStartDnd) NotificationHelper.toggleDnd(
@@ -134,12 +119,7 @@ class BedtimeRoutineReceiver : BroadcastReceiver() {
         }
 
         private fun stopBedtimeRoutine() {
-            trackerServiceConn.setOnConnectedCallback { service: MindfulTrackerService ->
-                service.getRestrictionManager.updateBedtimeApps(
-                    null
-                )
-            }
-            trackerServiceConn.bindService()
+            SharedPrefsHelper.getSetBedtimeApps(context, emptySet())
 
             // Stop DND if needed
             if (bedtimeSchedule.shouldStartDnd) NotificationHelper.toggleDnd(

@@ -21,19 +21,13 @@ import com.mindful.android.generics.SafeServiceConnection
 import com.mindful.android.generics.ServiceBinder
 import com.mindful.android.helpers.device.NotificationHelper.CRITICAL_CHANNEL_ID
 import com.mindful.android.helpers.storage.SharedPrefsHelper
-import com.mindful.android.services.tracking.MindfulTrackerService
 import com.mindful.android.utils.AppUtils
 import com.mindful.android.utils.DateTimeUtils
 
 class EmergencyPauseService : Service() {
     private lateinit var mNotificationTimer: NotificationTimer
-    private lateinit var mTrackerServiceConn: SafeServiceConnection<MindfulTrackerService>
 
     override fun onCreate() {
-        mTrackerServiceConn = SafeServiceConnection(
-            context = this,
-            serviceClass = MindfulTrackerService::class.java
-        )
         mNotificationTimer = NotificationTimer(
             context = this,
             ongoingPendingIntent = AppUtils.getPendingIntentForMindfulUri(this),
@@ -76,10 +70,11 @@ class EmergencyPauseService : Service() {
                 mNotificationTimer.getInitialNotification
             )
 
-            mTrackerServiceConn.setOnConnectedCallback { service: MindfulTrackerService ->
-                service.getLaunchTrackingManager.pauseResumeTracking(true)
-            }
-            mTrackerServiceConn.bindService()
+            // Pause tracking in Accessibility Service
+            val intent = Intent(this, com.mindful.android.services.accessibility.MindfulAccessibilityService::class.java)
+                .setAction(com.mindful.android.services.accessibility.MindfulAccessibilityService.ACTION_PAUSE_TRACKING)
+            startService(intent)
+
             mNotificationTimer.startTimer()
             Log.d(TAG, "startEmergencyTimer: EMERGENCY service started successfully")
         } catch (e: Exception) {
@@ -91,8 +86,11 @@ class EmergencyPauseService : Service() {
 
 
     override fun onDestroy() {
-        mTrackerServiceConn.service?.getLaunchTrackingManager?.pauseResumeTracking(false)
-        mTrackerServiceConn.unBindService()
+        // Resume tracking in Accessibility Service
+        val intent = Intent(this, com.mindful.android.services.accessibility.MindfulAccessibilityService::class.java)
+            .setAction(com.mindful.android.services.accessibility.MindfulAccessibilityService.ACTION_RESUME_TRACKING)
+        startService(intent)
+
         stopForeground(STOP_FOREGROUND_REMOVE)
         Log.d(TAG, "onDestroy: EMERGENCY service destroyed successfully")
         super.onDestroy()

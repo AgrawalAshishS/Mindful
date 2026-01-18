@@ -20,14 +20,12 @@ import android.util.Log
 import com.mindful.android.AppConstants.FOCUS_SESSION_SERVICE_NOTIFICATION_ID
 import com.mindful.android.R
 import com.mindful.android.enums.DndWakeLock
-import com.mindful.android.generics.SafeServiceConnection
 import com.mindful.android.generics.ServiceBinder
 import com.mindful.android.helpers.device.NotificationHelper
 import com.mindful.android.helpers.device.NotificationHelper.FOCUS_CHANNEL_ID
 import com.mindful.android.helpers.storage.SharedPrefsHelper
 import com.mindful.android.models.FocusSession
 import com.mindful.android.services.quickTiles.FocusQuickTileService
-import com.mindful.android.services.tracking.MindfulTrackerService
 import com.mindful.android.utils.AppUtils
 import com.mindful.android.utils.DateTimeUtils
 import java.util.Calendar
@@ -35,17 +33,12 @@ import kotlin.math.max
 
 class FocusSessionService : Service() {
     private val mBinder = ServiceBinder(this@FocusSessionService)
-    private lateinit var mTrackerServiceConn: SafeServiceConnection<MindfulTrackerService>
     private lateinit var mNotificationTimer: NotificationTimer
 
 
     private var session: FocusSession? = null
 
     override fun onCreate() {
-        mTrackerServiceConn = SafeServiceConnection(
-            context = this,
-            serviceClass = MindfulTrackerService::class.java
-        )
         super.onCreate()
     }
 
@@ -78,13 +71,8 @@ class FocusSessionService : Service() {
                 mNotificationTimer.getInitialNotification
             )
 
-            /// Start and bind tracking service
-            mTrackerServiceConn.setOnConnectedCallback { service: MindfulTrackerService ->
-                service.getRestrictionManager.updateFocusedApps(
-                    focusSession.distractingApps
-                )
-            }
-            mTrackerServiceConn.startAndBind()
+            /// Update focused apps
+            SharedPrefsHelper.getSetFocusedApps(this, focusSession.distractingApps)
 
             // Toggle DND according to the session configurations
             if (focusSession.toggleDnd) NotificationHelper.toggleDnd(
@@ -151,7 +139,7 @@ class FocusSessionService : Service() {
 
 
     fun updateFocusSession(session: FocusSession) {
-        mTrackerServiceConn.service?.getRestrictionManager?.updateFocusedApps(session.distractingApps)
+        SharedPrefsHelper.getSetFocusedApps(this, session.distractingApps)
         Log.d(
             TAG,
             "updateDistractingApps: Focus session's distracting app's list updated successfully"
@@ -174,8 +162,7 @@ class FocusSessionService : Service() {
 
 
     override fun onDestroy() {
-        mTrackerServiceConn.service?.getRestrictionManager?.updateFocusedApps(null)
-        mTrackerServiceConn.unBindService()
+        SharedPrefsHelper.getSetFocusedApps(this, emptySet())
         stopForeground(STOP_FOREGROUND_REMOVE)
         Log.d(TAG, "onDestroy: FOCUS service destroyed successfully")
 

@@ -24,6 +24,7 @@ import android.view.accessibility.AccessibilityEvent.TYPE_WINDOWS_CHANGED
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
 import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Toast
+import androidx.annotation.WorkerThread
 import com.mindful.android.AppConstants.FACEBOOK_PACKAGE
 import com.mindful.android.AppConstants.INSTAGRAM_PACKAGE
 import com.mindful.android.AppConstants.REDDIT_PACKAGE
@@ -32,10 +33,16 @@ import com.mindful.android.AppConstants.SNAPCHAT_PACKAGE
 import com.mindful.android.AppConstants.YOUTUBE_PACKAGE
 import com.mindful.android.R
 import com.mindful.android.enums.PlatformFeatures
+import com.mindful.android.enums.RestrictionType
 import com.mindful.android.helpers.device.PermissionsHelper
 import com.mindful.android.helpers.storage.SharedPrefsHelper
 import com.mindful.android.models.Wellbeing
 import com.mindful.android.receivers.DeviceAppsChangedReceiver
+import com.mindful.android.services.tracking.ContinuousUsageManager
+import com.mindful.android.services.tracking.OverlayManager
+import com.mindful.android.services.tracking.ReminderManager
+import com.mindful.android.services.tracking.RestrictionManager
+import com.mindful.android.utils.JsonUtils
 import com.mindful.android.utils.ThreadUtils
 import com.mindful.android.utils.executors.Throttler
 import java.util.concurrent.ExecutorService
@@ -53,6 +60,8 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
             "com.mindful.android.action.midnightAccessibilityReset"
         const val ACTION_TAMPER_PROTECTION_CHANGED =
             "com.mindful.android.action.tamperProtectionChanged"
+        const val ACTION_PAUSE_TRACKING = "com.mindful.android.action.pauseTracking"
+        const val ACTION_RESUME_TRACKING = "com.mindful.android.action.resumeTracking"
 
         // Set of desired events which will be processed
         private val desiredEvents = setOf(
@@ -79,11 +88,30 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
     private lateinit var deviceFeaturesManager: DeviceFeaturesManager
     private lateinit var trackingManager: TrackingManager
 
+    // Restriction Managers
+    private lateinit var overlayManager: OverlayManager
+    private lateinit var reminderManager: ReminderManager
+    private lateinit var continuousUsageManager: ContinuousUsageManager
+    private lateinit var restrictionManager: RestrictionManager
+
     private var wellbeing = Wellbeing()
 
     override fun onCreate() {
         super.onCreate()
-        trackingManager = TrackingManager(context = this)
+        
+        // Initialize Restriction Managers
+        overlayManager = OverlayManager(this)
+        reminderManager = ReminderManager(overlayManager, ::onNewAppLaunch)
+        continuousUsageManager = ContinuousUsageManager({ packageName ->
+            restrictionManager.addBlockedApp(packageName)
+            onNewAppLaunch(packageName)
+        }, { packageName ->
+            restrictionManager.removeBlockedApp(packageName)
+        })
+        restrictionManager = RestrictionManager(this, { /* No-op: service stays alive */ }, continuousUsageManager)
+
+        trackingManager = TrackingManager(context = this, onNewAppLaunched = ::onNewAppLaunch)
+        
         deviceFeaturesManager = DeviceFeaturesManager(
             context = this,
             blockedContentGoBack = this::goBackWithToast
@@ -101,6 +129,7 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
         // Register shared prefs listener and load data
         SharedPrefsHelper.registerUnregisterListenerToListenablePrefs(this, true, this)
         wellbeing = SharedPrefsHelper.getSetWellBeingSettings(this, null)
+        loadRestrictionsFromPrefs()
 
         // Register listener for install and uninstall events
         deviceAppsChangedReceiver.register(this)
@@ -111,6 +140,9 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
         when (intent?.action) {
             ACTION_MIDNIGHT_ACCESSIBILITY_RESET -> {
                 shortsPlatformManager.resetShortsScreenTime()
+                restrictionManager.resetCache()
+                overlayManager.dismissSheetOverlay()
+                reminderManager.cancelReminders()
                 Log.d(TAG, "onStartCommand: Midnight reset completed")
             }
 
@@ -123,12 +155,23 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
                 Log.d(TAG, "onStartCommand: Pressing home button")
                 goBackWithToast(GLOBAL_ACTION_HOME)
             }
+
+            ACTION_PAUSE_TRACKING -> {
+                trackingManager.pauseTracking()
+                Log.d(TAG, "onStartCommand: Tracking paused")
+            }
+
+            ACTION_RESUME_TRACKING -> {
+                trackingManager.resumeTracking()
+                Log.d(TAG, "onStartCommand: Tracking resumed")
+            }
         }
         return super.onStartCommand(intent, flags, startId)
     }
 
     override fun onServiceConnected() {
         refreshServiceConfig()
+        loadRestrictionsFromPrefs()
         trackingManager.stopManualTracking()
         Log.d(TAG, "onCreate: Accessibility service started successfully")
         super.onServiceConnected()
@@ -194,6 +237,84 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
                 e
             )
             SharedPrefsHelper.insertCrashLogToPrefs(this, e)
+        }
+    }
+
+    @WorkerThread
+    private fun onNewAppLaunch(packageName: String?) {
+        try {
+            reminderManager.cancelReminders()
+            overlayManager.dismissSheetOverlay()
+
+            if (packageName == null) {
+                continuousUsageManager.stopTracking()
+                return
+            }
+
+            val restriction = restrictionManager.getAppRestriction(packageName)
+            if (restriction != null) {
+                continuousUsageManager.startTracking(packageName, restriction)
+            } else {
+                continuousUsageManager.stopTracking()
+            }
+
+            /// check current restrictions
+            val currentOrFutureState = restrictionManager.isAppRestricted(packageName)
+            Log.d(TAG, "onNewAppLaunch: $packageName's evaluated state => $currentOrFutureState")
+
+            currentOrFutureState?.let {
+                /// Already restricted
+                if (it.timeLeftMillis <= 0L) {
+                    if (it.type == RestrictionType.CONTINUOUS_USAGE) {
+                        restriction?.let { restriction ->
+                            continuousUsageManager.startBreak(packageName, restriction)
+                        }
+                    }
+                    overlayManager.showSheetOverlay(
+                        packageName = packageName,
+                        restrictionState = it,
+                    )
+                }
+                /// Under limit but will be exhausted in some time
+                else {
+                    reminderManager.scheduleReminders(
+                        packageName = packageName,
+                        state = it,
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            SharedPrefsHelper.insertCrashLogToPrefs(this, e)
+            Log.e(TAG, "onNewAppLaunch: Failed to process new app launch event", e)
+        }
+    }
+
+    private fun loadRestrictionsFromPrefs() {
+        try {
+            // Load App Restrictions
+            val appRestrictionsJson = SharedPrefsHelper.getSetAppRestrictions(this, null)
+            val appRestrictions = JsonUtils.parseAppRestrictionsMap(appRestrictionsJson)
+
+            // Load Groups
+            val groupsJson = SharedPrefsHelper.getSetRestrictionGroups(this, null)
+            val groups = JsonUtils.parseRestrictionGroupsMap(groupsJson)
+
+            restrictionManager.updateRestrictions(appRestrictions, groups)
+
+            // Load Focused Apps
+            val focusedApps = SharedPrefsHelper.getSetFocusedApps(this, null)
+            restrictionManager.updateFocusedApps(focusedApps)
+
+            // Load Bedtime Apps
+            val bedtimeApps = SharedPrefsHelper.getSetBedtimeApps(this, null)
+            restrictionManager.updateBedtimeApps(bedtimeApps)
+
+            // Re-evaluate current app
+            onNewAppLaunch(trackingManager.getLastActiveApp)
+            
+            Log.d(TAG, "loadRestrictionsFromPrefs: Restrictions loaded successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "loadRestrictionsFromPrefs: Failed to load restrictions", e)
         }
     }
 
@@ -310,10 +431,19 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
 
     override fun onSharedPreferenceChanged(prefs: SharedPreferences, changedKey: String?) {
         changedKey?.let { key ->
-            if (key == SharedPrefsHelper.PREF_KEY_WELLBEING_SETTINGS) {
-                Log.d(TAG, "OnSharedPrefsChanged: Key changed = $changedKey")
-                wellbeing = SharedPrefsHelper.getSetWellBeingSettings(this, null)
-                refreshServiceConfig()
+            when (key) {
+                SharedPrefsHelper.PREF_KEY_WELLBEING_SETTINGS -> {
+                    Log.d(TAG, "OnSharedPrefsChanged: Key changed = $changedKey")
+                    wellbeing = SharedPrefsHelper.getSetWellBeingSettings(this, null)
+                    refreshServiceConfig()
+                }
+                SharedPrefsHelper.PREF_KEY_APP_RESTRICTIONS,
+                SharedPrefsHelper.PREF_KEY_RESTRICTION_GROUPS,
+                SharedPrefsHelper.PREF_KEY_FOCUSED_APPS,
+                SharedPrefsHelper.PREF_KEY_BEDTIME_APPS -> {
+                    Log.d(TAG, "OnSharedPrefsChanged: Restrictions changed = $changedKey")
+                    loadRestrictionsFromPrefs()
+                }
             }
         }
     }
@@ -325,6 +455,8 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
         try {
             executorService.shutdownNow()
             trackingManager.startManualTracking()
+            reminderManager.cancelReminders()
+            overlayManager.dismissSheetOverlay()
 
             // Unregister prefs listener and receiver
             deviceAppsChangedReceiver.unRegister(this)

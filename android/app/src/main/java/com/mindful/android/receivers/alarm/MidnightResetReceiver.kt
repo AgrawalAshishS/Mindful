@@ -27,7 +27,6 @@ import com.mindful.android.helpers.AlarmTasksSchedulingHelper.scheduleMidnightRe
 import com.mindful.android.helpers.storage.SharedPrefsHelper
 import com.mindful.android.services.accessibility.MindfulAccessibilityService
 import com.mindful.android.services.accessibility.MindfulAccessibilityService.Companion.ACTION_MIDNIGHT_ACCESSIBILITY_RESET
-import com.mindful.android.services.tracking.MindfulTrackerService
 import com.mindful.android.utils.Utils
 import com.mindful.android.workers.FlutterBgExecutionWorker
 import com.mindful.android.workers.FlutterBgExecutionWorker.Companion.FLUTTER_TASK_ID
@@ -69,18 +68,9 @@ class MidnightResetReceiver : BroadcastReceiver() {
         private val context: Context,
         params: WorkerParameters,
     ) : Worker(context, params) {
-        private val mTrackerServiceConn = SafeServiceConnection(
-            context = context,
-            serviceClass = MindfulTrackerService::class.java,
-        )
-
 
         override fun doWork(): Result {
             try {
-                // Let tracking service know about midnight reset
-                mTrackerServiceConn.setOnConnectedCallback { service: MindfulTrackerService -> service.onMidnightReset() }
-                mTrackerServiceConn.bindService()
-
                 // Let accessibility service know about midnight reset
                 if (Utils.isServiceRunning(context, MindfulAccessibilityService::class.java)) {
                     val serviceIntent = Intent(
@@ -100,8 +90,7 @@ class MidnightResetReceiver : BroadcastReceiver() {
                 SharedPrefsHelper.insertCrashLogToPrefs(context, e)
                 return Result.failure()
             } finally {
-                // Unbind service and schedule task for the next day
-                mTrackerServiceConn.unBindService()
+                // Schedule task for the next day
                 scheduleMidnightResetTask(context, false)
             }
         }
