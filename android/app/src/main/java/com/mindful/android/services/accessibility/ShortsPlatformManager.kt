@@ -210,7 +210,14 @@ class ShortsPlatformManager(
             "player_surface_view", // Main video playback surface
             "video_overlay_gradient", // Video overlay used by player
             "video_player_controls", // Player controls bar
-            "tweet_video_player" // Container for embedded player
+            "tweet_video_player", // Container for embedded player
+            "video_timeline_container", 
+            "player_controls_container",
+            "video_view", // Common generic ID
+            "av_player_view",
+            "video_container",
+            "immersive_media_viewer_container", // Fullscreen viewer
+            "dock_video_view"
         )
 
         // Common View IDs for YouTube bottom tabs
@@ -252,7 +259,7 @@ class ShortsPlatformManager(
             
             val packageName = node.packageName?.toString() ?: X_PACKAGE
 
-            // Check for common video player view IDs
+            // 1. Check for common video player view IDs (most reliable)
             for (id in mXVideoViewIds) {
                 if (doesNodeByIdExists(node, "$packageName:id/$id")) {
                     Log.d(TAG, "isXVideoOpen: Detected by View ID: $id")
@@ -260,14 +267,20 @@ class ShortsPlatformManager(
                 }
             }
 
-            // Fallback: Check for video player class name which is often different from the main activity
-            // The video player often uses a SurfaceView or TextureView wrapper
+            // 2. Aggressive Fallback: Check for video player controls text
             if (node.findAccessibilityNodeInfosByText("Play video").isNotEmpty() || 
                 node.findAccessibilityNodeInfosByText("Pause video").isNotEmpty() || 
-                node.findAccessibilityNodeInfosByText("video player").isNotEmpty()) {
-                Log.d(TAG, "isXVideoOpen: Detected by video text control.")
+                node.findAccessibilityNodeInfosByText("video player").isNotEmpty() ||
+                node.findAccessibilityNodeInfosByText("full-screen video").isNotEmpty() ||
+                node.findAccessibilityNodeInfosByText("Playback speed").isNotEmpty()) {
+                Log.d(TAG, "isXVideoOpen: Detected by video text control (aggressive).")
                 return true
             }
+            
+            // 3. Last resort: SurfaceView/TextureView check
+            // Note: findAccessibilityNodeInfosByClassName is not standard Android API for AccessibilityNodeInfo.
+            // We must traverse manually or skip. For now, skipping to fix build.
+            // If deeper inspection is needed, a recursive traversal helper is required.
 
             return false
         }
