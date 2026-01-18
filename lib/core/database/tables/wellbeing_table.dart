@@ -12,6 +12,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:mindful/core/database/converters/enum_list_converter.dart';
+import 'package:mindful/core/database/converters/map_string_int_converter.dart';
 import 'package:mindful/core/database/converters/string_list_converter.dart';
 import 'package:mindful/core/enums/platform_features.dart';
 
@@ -46,4 +47,9 @@ class WellbeingTable extends Table {
   TextColumn get nsfwWebsites => text()
       .map(const StringListConverter())
       .withDefault(Constant(jsonEncode([])))();
+
+  /// Map of website limits. (Host -> TimeLimit in seconds)
+  TextColumn get websiteTimeLimits => text()
+      .map(const MapStringIntConverter())
+      .withDefault(const Constant("{}"))();
 }

@@ -10,12 +10,14 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Toast
 import androidx.core.net.toUri
 import com.mindful.android.R
+import com.mindful.android.helpers.storage.WebUsageDatabaseHelper
 import com.mindful.android.models.Wellbeing
 import com.mindful.android.utils.NsfwDomains
 import com.mindful.android.utils.NsfwKeywords
 import com.mindful.android.utils.ThreadUtils
 import com.mindful.android.utils.Utils
 import com.mindful.android.utils.executors.Throttler
+import java.util.Calendar
 
 class BrowserManager(
     private val context: Context,
@@ -24,7 +26,54 @@ class BrowserManager(
 ) {
     private var mLastRedirectedUrl = ""
     private val throttler: Throttler = Throttler(1000L)
+    private val dbHelper = WebUsageDatabaseHelper.getInstance(context)
+    private var lastTrackedDomain = ""
+    private var lastTrackedTime = 0L
 
+    fun stopTracking() {
+        if (lastTrackedDomain.isNotEmpty() && lastTrackedTime != 0L) {
+            val now = System.currentTimeMillis()
+            val duration = now - lastTrackedTime
+            if (duration > 0) {
+                // Calculate Midnight
+                val calendar = Calendar.getInstance()
+                calendar.set(Calendar.HOUR_OF_DAY, 0)
+                calendar.set(Calendar.MINUTE, 0)
+                calendar.set(Calendar.SECOND, 0)
+                calendar.set(Calendar.MILLISECOND, 0)
+                val today = calendar.timeInMillis
+
+                dbHelper.addUsage(lastTrackedDomain, duration, today)
+            }
+        }
+        lastTrackedDomain = ""
+        lastTrackedTime = 0L
+    }
+
+    private fun checkAndBlockWebsiteLimits(host: String, wellbeing: Wellbeing): Boolean {
+        val limitMs = wellbeing.websiteTimeLimits[host] ?: return false
+
+        // Calculate Midnight
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val today = calendar.timeInMillis
+
+        val usage = dbHelper.getUsage(host, today)
+
+        // Add current session duration
+        var currentSession = 0L
+        if (lastTrackedDomain == host && lastTrackedTime != 0L) {
+            currentSession = System.currentTimeMillis() - lastTrackedTime
+        }
+
+        if (usage + currentSession >= limitMs) {
+            return true
+        }
+        return false
+    }
 
     /**
      * Blocks access to websites and short-form content based on current settings.
@@ -40,13 +89,26 @@ class BrowserManager(
         var url = extractBrowserUrl(node, packageName)
 
         // Return if url is empty or does not contain dot or have space this basically means its not url
-        if (url.contains(" ") || !url.contains(".")) return
+        if (url.contains(" ") || !url.contains(".")) {
+            stopTracking()
+            return
+        }
 
         // Clean google AMP from the url if found (some site can appear in the AMP container with google's amp domain)
         url = url.replace("google.com/amp/s/amp.", "")
 
         // Block websites
-        val host = Utils.parseHostNameFromUrl(url) ?: return
+        val host = Utils.parseHostNameFromUrl(url) ?: run {
+            stopTracking()
+            return
+        }
+
+        // Update tracking if domain changed
+        if (host != lastTrackedDomain) {
+            stopTracking()
+            lastTrackedDomain = host
+            lastTrackedTime = System.currentTimeMillis()
+        }
 
         when {
             wellbeing.blockedWebsites.contains(host)
@@ -54,6 +116,12 @@ class BrowserManager(
                     || nsfwDomains[host] ?: false
                 -> {
                 Log.d(TAG, "blockDistraction: Blocked website $host opened in $packageName")
+                blockedContentGoBack.invoke()
+            }
+
+            // Check Limits
+            checkAndBlockWebsiteLimits(host, wellbeing) -> {
+                Log.d(TAG, "blockDistraction: Website limit reached for $host")
                 blockedContentGoBack.invoke()
             }
 

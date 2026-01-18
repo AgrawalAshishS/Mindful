@@ -243,6 +243,7 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
     @WorkerThread
     private fun onNewAppLaunch(packageName: String?) {
         try {
+            browserManager.stopTracking()
             reminderManager.cancelReminders()
             overlayManager.dismissSheetOverlay()
 
@@ -329,7 +330,8 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
         return wellbeing.blockedFeatures.isNotEmpty() ||
                 wellbeing.blockedWebsites.isNotEmpty() ||
                 wellbeing.nsfwWebsites.isNotEmpty() ||
-                wellbeing.blockNsfwSites
+                wellbeing.blockNsfwSites ||
+                wellbeing.websiteTimeLimits.isNotEmpty()
     }
 
 

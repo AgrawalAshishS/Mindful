@@ -227,6 +227,7 @@ class MethodChannelService {
                 wellBeingSettings.blockedFeatures.map((e) => e.name).toList(),
             "blockedWebsites": wellBeingSettings.blockedWebsites,
             "nsfwWebsites": wellBeingSettings.nsfwWebsites,
+            "websiteTimeLimits": wellBeingSettings.websiteTimeLimits,
           },
         ),
       );

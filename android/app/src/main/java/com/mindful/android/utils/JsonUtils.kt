@@ -139,4 +139,28 @@ object JsonUtils {
             map
         }
     }
+
+    /**
+     * Parses a JSON object string into a map of String keys and Long values.
+     *
+     * @param jsonString JSON object string (e.g., "{\"key1\": 100, \"key2\": 200}").
+     * @return A map of String to Long.
+     */
+    fun parseStringLongMap(jsonString: String?): Map<String, Long> {
+        val map = HashMap<String, Long>()
+        if (jsonString.isNullOrBlank() || jsonString == "null") return map
+
+        return try {
+            val jsonObject = org.json.JSONObject(jsonString)
+            val keys = jsonObject.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                map[key] = jsonObject.optLong(key)
+            }
+            map
+        } catch (e: Exception) {
+            Log.e(TAG, "parseStringLongMap: Failed to parse JSON map", e)
+            map
+        }
+    }
 }

@@ -50,6 +50,7 @@ const defaultWellbeingModel = Wellbeing(
   blockNsfwSites: false,
   blockedWebsites: [],
   nsfwWebsites: [],
+  websiteTimeLimits: {},
 );
 
 const defaultBedtimeScheduleModel = BedtimeSchedule(

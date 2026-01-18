@@ -75,4 +75,15 @@ class WellBeingNotifier extends StateNotifier<Wellbeing> {
   /// Sets the allowed time limit for short content consumption.
   void setAllowedShortContentTime(int timeSec) =>
       state = state.copyWith(allowedShortsTimeSec: timeSec > 0 ? timeSec : -1);
+
+  /// Updates the time limit for a website. Pass -1 to remove limit.
+  void updateWebsiteTimeLimit(String host, int limitSec) {
+    final newLimits = Map<String, int>.from(state.websiteTimeLimits);
+    if (limitSec > 0) {
+      newLimits[host] = limitSec;
+    } else {
+      newLimits.remove(host);
+    }
+    state = state.copyWith(websiteTimeLimits: newLimits);
+  }
 }
