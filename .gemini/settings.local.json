@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew test:*)",
+      "Bash(./gradlew app:compileDebugUnitTestKotlin:*)",
+      "Bash(./gradlew ktlintFormat:*)",
+      "Bash(./gradlew assembleDebug:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(ls:*)",
+      "Bash(./gradlew clean build:*)",
+      "Bash(./gradlew app:testDebugUnitTest:*)",
+      "Bash(./gradlew clean:*)",
+      "Bash(tree /F \"C:\\\\Projects\\\\Mindful\\\\lib\")"
+    ]
+  }
+}

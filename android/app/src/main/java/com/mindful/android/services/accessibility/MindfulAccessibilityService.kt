@@ -185,6 +185,8 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
             executorService.submit {
                 // Determine package and event source node
                 val eventPackageName = event.packageName.toString()
+                val className = event.className?.toString()
+
                 val node = if (eventPackageName == REDDIT_PACKAGE) event.source
                 else rootInActiveWindow ?: event.source
 
@@ -197,7 +199,8 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
                         processEventInBackground(
                             packageName = eventPackageName,
                             node = it,
-                            wellBeing = wellbeing.copy()
+                            wellBeing = wellbeing.copy(),
+                            className = className
                         )
                     }
                 }
@@ -212,11 +215,14 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
      *
      * @param packageName The package name of the app generating the event.
      * @param node        The accessibility node representing the UI element currently in focus.
+     * @param wellBeing   The current wellbeing settings.
+     * @param className   The class name associated with the event.
      */
     private fun processEventInBackground(
         packageName: String,
         node: AccessibilityNodeInfo,
         wellBeing: Wellbeing,
+        className: String? = null
     ) {
         try {
             when (packageName) {
@@ -224,7 +230,7 @@ class MindfulAccessibilityService : AccessibilityService(), OnSharedPreferenceCh
                     deviceFeaturesManager.blockFeatures(packageName, node, wellBeing)
 
                 in shortsPlatformPackages ->
-                    shortsPlatformManager.blockDistraction(packageName, node, wellBeing)
+                    shortsPlatformManager.blockDistraction(packageName, node, wellBeing, className)
 
                 in browserPackages ->
                     browserManager.blockDistraction(packageName, node, wellBeing)

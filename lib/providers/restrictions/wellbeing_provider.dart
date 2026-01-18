@@ -37,53 +37,42 @@ class WellBeingNotifier extends StateNotifier<Wellbeing> {
     if (MethodChannelService.instance.isSelfRestart) {
       await MethodChannelService.instance.updateWellBeingSettings(state);
     }
+  }
 
-    /// Listen to provider and save changes to Isar database and platform service
-    addListener(
-      fireImmediately: false,
-      (state) {
-        _dao.saveWellBeingSettings(state);
-        MethodChannelService.instance.updateWellBeingSettings(state);
-      },
-    );
+  /// Helper to update state and persist it
+  void _updateState(Wellbeing newState) {
+    state = newState;
+    _dao.saveWellBeingSettings(state);
+    MethodChannelService.instance.updateWellBeingSettings(state);
   }
 
   /// Adds or removes a feature to/from the blocked features list.
-  void insertRemoveBlockedFeature(PlatformFeatures feature) =>
-      state = state.copyWith(
-        blockedFeatures: state.blockedFeatures.contains(feature)
-            ? [...state.blockedFeatures.where((e) => e != feature)]
-            : [...state.blockedFeatures, feature],
-      );
+  void insertRemoveBlockedFeature(PlatformFeatures feature) {
+    final newList = state.blockedFeatures.contains(feature)
+        ? state.blockedFeatures.where((e) => e != feature).toList()
+        : [...state.blockedFeatures, feature];
+    
+    _updateState(state.copyWith(blockedFeatures: newList));
+  }
 
   /// Toggles the block status for NSFW websites.
   void switchBlockNsfwSites() =>
-      state = state.copyWith(blockNsfwSites: !state.blockNsfwSites);
+      _updateState(state.copyWith(blockNsfwSites: !state.blockNsfwSites));
 
   /// Adds or removes a website host to the blocked websites list.
-  void insertRemoveBlockedSite(String websiteHost, bool shouldInsert) async =>
-      state = state.copyWith(
-        blockedWebsites: shouldInsert
-            ? [...state.blockedWebsites, websiteHost]
-            : [...state.blockedWebsites.where((e) => e != websiteHost)],
-      );
+  void insertRemoveBlockedSite(String websiteHost, bool shouldInsert) async {
+    final newList = shouldInsert
+        ? [...state.blockedWebsites, websiteHost]
+        : state.blockedWebsites.where((e) => e != websiteHost).toList();
+    
+    _updateState(state.copyWith(blockedWebsites: newList));
+  }
 
   /// Adds a website host to the nsfw websites list.
-  void insertNsfwSite(String websiteHost) async => state =
-      state.copyWith(nsfwWebsites: [...state.nsfwWebsites, websiteHost]);
+  void insertNsfwSite(String websiteHost) async => 
+      _updateState(state.copyWith(nsfwWebsites: [...state.nsfwWebsites, websiteHost]));
 
   /// Sets the allowed time limit for short content consumption.
   void setAllowedShortContentTime(int timeSec) =>
-      state = state.copyWith(allowedShortsTimeSec: timeSec > 0 ? timeSec : -1);
-
-  /// Updates the time limit for a website. Pass -1 to remove limit.
-  void updateWebsiteTimeLimit(String host, int limitSec) {
-    final newLimits = Map<String, int>.from(state.websiteTimeLimits);
-    if (limitSec > 0) {
-      newLimits[host] = limitSec;
-    } else {
-      newLimits.remove(host);
-    }
-    state = state.copyWith(websiteTimeLimits: newLimits);
-  }
+      _updateState(state.copyWith(allowedShortsTimeSec: timeSec > 0 ? timeSec : -1));
 }

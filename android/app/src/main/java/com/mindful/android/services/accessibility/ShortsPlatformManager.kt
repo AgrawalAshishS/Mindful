@@ -35,11 +35,13 @@ class ShortsPlatformManager(
      * @param packageName The package name of the current app in focus.
      * @param node The root `AccessibilityNodeInfo` of the current screen.
      * @param wellbeing The user's `WellBeingSettings`, including blocked features and time limits.
+     * @param className The class name associated with the event.
      */
     fun blockDistraction(
         packageName: String,
         node: AccessibilityNodeInfo,
         wellbeing: Wellbeing,
+        className: String? = null
     ) {
         // Use default youtube package for unofficial clients too
         val resolvedPackage =
@@ -54,7 +56,7 @@ class ShortsPlatformManager(
             SNAPCHAT_PACKAGE -> isSnapchatFeatureOpen(node, blockedFeatures)
             FACEBOOK_PACKAGE -> isFacebookFeatureOpen(node, blockedFeatures)
             REDDIT_PACKAGE -> isRedditFeatureOpen(node, blockedFeatures)
-            YOUTUBE_PACKAGE -> isYoutubeFeatureOpen(node, blockedFeatures)
+            YOUTUBE_PACKAGE -> isYoutubeFeatureOpen(node, blockedFeatures, className)
             else -> false
         }
 
@@ -81,7 +83,7 @@ class ShortsPlatformManager(
                     && doesUrlContainsAnyElement(mInstaExploreUrls, url) -> true
 
             PlatformFeatures.YOUTUBE_SHORTS in wellbeing.blockedFeatures
-                    && doesUrlContainsAnyElement(mYtShortUrls, url) -> true
+                    && (doesUrlContainsAnyElement(mYtShortUrls, url) || url.contains("/hashtag/shorts")) -> true
 
             PlatformFeatures.FACEBOOK_REELS in wellbeing.blockedFeatures
                     && doesUrlContainsAnyElement(mFbReelUrls, url) -> true
@@ -113,6 +115,12 @@ class ShortsPlatformManager(
         allowedShortContentTimeMs: Long,
         maxAllowedDuration: Long = 30 * 1000L,
     ) {
+        // If allowed time is 0, block immediately
+        if (allowedShortContentTimeMs == 0L) {
+            blockedContentGoBack.invoke()
+            return
+        }
+
         // Check if limit is exhausted
         if (allowedShortContentTimeMs < 0 || shortContentScreenTime > (allowedShortContentTimeMs + SAVING_INTERVAL_MS)) {
             blockedContentGoBack.invoke()
@@ -174,7 +182,26 @@ class ShortsPlatformManager(
             "web.snapchat.com/discover/"
         )
 
-        private val mFbNodeTexts = listOf("Add a comment", "कमेंट जोड़ें…")
+        private val mFbNodeTexts = listOf("Add a comment", "कमेंट जोड़ें…", "Reels", "reels")
+
+        // Common View IDs for YouTube Shorts
+        private val mYtShortsViewIds = listOf(
+            "reel_player_underlay",
+            "reel_player_overlay_container",
+            "reel_player_view_container",
+            "reel_recycler",
+            "shorts_player_view",
+            "shorts_container",
+            "reel_container",
+            "shorts_video_player_view",
+            "reel_player_overlay_layout"
+        )
+
+        // Common View IDs for YouTube bottom tabs
+        private val mYtShortsTabIds = listOf("menu_shorts", "pivot_shorts", "shorts_tab")
+
+        // YouTube Shorts Activity Class Name
+        private const val YOUTUBE_SHORTS_ACTIVITY = "com.google.android.apps.youtube.app.extensions.reels.watch.activity.ReelWatchActivity"
 
 
         /**
@@ -186,7 +213,8 @@ class ShortsPlatformManager(
         ): Boolean {
             return when {
                 PlatformFeatures.INSTAGRAM_REELS in blockedFeatures &&
-                        doesNodeByIdExists(node, "com.instagram.android:id/clips_video_container")
+                        (doesNodeByIdExists(node, "com.instagram.android:id/clips_video_container") ||
+                         doesNodeByIdExists(node, "com.instagram.android:id/clips_viewer_container"))
                 -> true
 
                 PlatformFeatures.INSTAGRAM_EXPLORE in blockedFeatures &&
@@ -203,9 +231,41 @@ class ShortsPlatformManager(
         private fun isYoutubeFeatureOpen(
             node: AccessibilityNodeInfo,
             blockedFeatures: Set<PlatformFeatures>,
+            className: String? = null
         ): Boolean {
-            return PlatformFeatures.YOUTUBE_SHORTS in blockedFeatures &&
-                    doesNodeByIdExists(node, "${node.packageName}:id/reel_player_underlay")
+            if (PlatformFeatures.YOUTUBE_SHORTS !in blockedFeatures) return false
+
+            // 1. Check by Activity Class Name (very reliable if present)
+            if (className != null && className.contains("ReelWatchActivity")) return true
+
+            val packageName = node.packageName?.toString() ?: YOUTUBE_PACKAGE
+
+            // 2. Check by common YouTube Shorts view IDs
+            for (id in mYtShortsViewIds) {
+                if (doesNodeByIdExists(node, "$packageName:id/$id")) return true
+            }
+
+            // 3. Check if the "Shorts" tab is selected in the bottom navigation bar
+            for (tabId in mYtShortsTabIds) {
+                val tabNodes = node.findAccessibilityNodeInfosByViewId("$packageName:id/$tabId")
+                if (tabNodes.isNotEmpty() && tabNodes.any { it.isSelected || it.parent?.isSelected == true || it.isClickable }) {
+                    // Note: isClickable check is risky but some versions use it for selected state visual
+                    // Better to stick to isSelected if possible.
+                    if (tabNodes.any { it.isSelected || it.parent?.isSelected == true }) return true
+                }
+            }
+
+            // 4. Check by description (often "Shorts")
+            val rootNode = node
+            if (rootNode.contentDescription?.toString()?.contains("Shorts", ignoreCase = true) == true) return true
+
+            // 5. Fallback: check for "Shorts" text being selected
+            val shortsTextNodes = node.findAccessibilityNodeInfosByText("Shorts")
+            if (shortsTextNodes.isNotEmpty() && shortsTextNodes.any { it.isSelected || it.parent?.isSelected == true }) {
+                return true
+            }
+
+            return false
         }
 
         /**
@@ -218,10 +278,8 @@ class ShortsPlatformManager(
 
             return when {
                 PlatformFeatures.SNAPCHAT_SPOTLIGHT in blockedFeatures &&
-                        doesNodeByIdExists(
-                            node,
-                            "com.snapchat.android:id/spotlight_card_static_thumbnail"
-                        )
+                        (doesNodeByIdExists(node, "com.snapchat.android:id/spotlight_card_static_thumbnail") ||
+                         doesNodeByIdExists(node, "com.snapchat.android:id/spotlight_fragment_container"))
                 -> true
 
                 PlatformFeatures.SNAPCHAT_DISCOVER in blockedFeatures &&
@@ -239,14 +297,18 @@ class ShortsPlatformManager(
             node: AccessibilityNodeInfo,
             blockedFeatures: Set<PlatformFeatures>,
         ): Boolean {
-            // TODO: Add more string translated from different languages for the node text
-            //  as user may have set different language for facebook app
-
             if (PlatformFeatures.FACEBOOK_REELS in blockedFeatures) {
+                // Check by text
                 for (text in mFbNodeTexts) {
                     if (node.findAccessibilityNodeInfosByText(text).isNotEmpty()) {
                         return true
                     }
+                }
+                
+                // Check by common view IDs
+                val fbReelsIds = listOf("reels_video_player_container", "reels_video_view")
+                for (id in fbReelsIds) {
+                    if (doesNodeByIdExists(node, "com.facebook.katana:id/$id")) return true
                 }
             }
 
@@ -260,7 +322,9 @@ class ShortsPlatformManager(
             node: AccessibilityNodeInfo,
             blockedFeatures: Set<PlatformFeatures>,
         ): Boolean {
-            return PlatformFeatures.REDDIT_SHORTS in blockedFeatures && node.viewIdResourceName == "feed_vertical_pager"
+            return PlatformFeatures.REDDIT_SHORTS in blockedFeatures && 
+                   (node.viewIdResourceName == "feed_vertical_pager" || 
+                    doesNodeByIdExists(node, "com.reddit.frontpage:id/feed_vertical_pager"))
         }
 
         /**

@@ -37,7 +37,6 @@ Overall, this results in a more reliable, robust, and maintainable tracking mech
     Enforce web content restrictions (may include new time-based rules)
     Implement new database tables schema
 	
-I have defined requirement details in .requirement/requirement.md.
 - First create plan and put it in .plan folder with <date>-<time>.md file.
 - Read previous plan files to understand what was done in past.
 - Finish plan with following must haves before start coding.
@@ -49,3 +48,6 @@ I have defined requirement details in .requirement/requirement.md.
 - commit your code at end with proper message.
 - Verification: Verify that app usage is correctly tracked and blocked (if restricted) using the new Accessibility-based detection.
 - Edge Cases: Watch for behavior when the Accessibility Service is toggled off/on by the system or user (logic handles this by closing/opening sessions).
+
+
+I have defined requirement details in .requirement/requirement.md.

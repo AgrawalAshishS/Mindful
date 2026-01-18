@@ -15,7 +15,6 @@ import 'package:flutter/foundation.dart';
 import 'package:mindful/core/database/adapters/time_of_day_adapter.dart';
 import 'package:mindful/core/database/converters/bool_list_converter.dart';
 import 'package:mindful/core/database/converters/enum_list_converter.dart';
-import 'package:mindful/core/database/converters/map_string_int_converter.dart';
 import 'package:mindful/core/database/converters/notification_schedule_list_converter.dart';
 import 'package:mindful/core/database/converters/string_list_converter.dart';
 import 'package:mindful/core/database/daos/dynamic_records_dao.dart';

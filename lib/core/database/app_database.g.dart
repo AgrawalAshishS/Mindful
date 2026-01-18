@@ -4411,23 +4411,13 @@ class $WellbeingTableTable extends WellbeingTable
           .withConverter<List<String>>(
               $WellbeingTableTable.$converternsfwWebsites);
   @override
-  late final GeneratedColumnWithTypeConverter<Map<String, int>, String>
-      websiteTimeLimits = GeneratedColumn<String>(
-              'website_time_limits', aliasedName, false,
-              type: DriftSqlType.string,
-              requiredDuringInsert: false,
-              defaultValue: const Constant("{}"))
-          .withConverter<Map<String, int>>(
-              $WellbeingTableTable.$converterwebsiteTimeLimits);
-  @override
   List<GeneratedColumn> get $columns => [
         id,
         allowedShortsTimeSec,
         blockedFeatures,
         blockNsfwSites,
         blockedWebsites,
-        nsfwWebsites,
-        websiteTimeLimits
+        nsfwWebsites
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4478,9 +4468,6 @@ class $WellbeingTableTable extends WellbeingTable
       nsfwWebsites: $WellbeingTableTable.$converternsfwWebsites.fromSql(
           attachedDatabase.typeMapping.read(
               DriftSqlType.string, data['${effectivePrefix}nsfw_websites'])!),
-      websiteTimeLimits: $WellbeingTableTable.$converterwebsiteTimeLimits
-          .fromSql(attachedDatabase.typeMapping.read(DriftSqlType.string,
-              data['${effectivePrefix}website_time_limits'])!),
     );
   }
 
@@ -4496,8 +4483,6 @@ class $WellbeingTableTable extends WellbeingTable
       const StringListConverter();
   static TypeConverter<List<String>, String> $converternsfwWebsites =
       const StringListConverter();
-  static TypeConverter<Map<String, int>, String> $converterwebsiteTimeLimits =
-      const MapStringIntConverter();
 }
 
 class Wellbeing extends DataClass implements Insertable<Wellbeing> {
@@ -4519,17 +4504,13 @@ class Wellbeing extends DataClass implements Insertable<Wellbeing> {
 
   /// List of website hosts which are nsfw.
   final List<String> nsfwWebsites;
-
-  /// Map of website limits. (Host -> TimeLimit in seconds)
-  final Map<String, int> websiteTimeLimits;
   const Wellbeing(
       {required this.id,
       required this.allowedShortsTimeSec,
       required this.blockedFeatures,
       required this.blockNsfwSites,
       required this.blockedWebsites,
-      required this.nsfwWebsites,
-      required this.websiteTimeLimits});
+      required this.nsfwWebsites});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -4550,11 +4531,6 @@ class Wellbeing extends DataClass implements Insertable<Wellbeing> {
       map['nsfw_websites'] = Variable<String>(
           $WellbeingTableTable.$converternsfwWebsites.toSql(nsfwWebsites));
     }
-    {
-      map['website_time_limits'] = Variable<String>($WellbeingTableTable
-          .$converterwebsiteTimeLimits
-          .toSql(websiteTimeLimits));
-    }
     return map;
   }
 
@@ -4566,7 +4542,6 @@ class Wellbeing extends DataClass implements Insertable<Wellbeing> {
       blockNsfwSites: Value(blockNsfwSites),
       blockedWebsites: Value(blockedWebsites),
       nsfwWebsites: Value(nsfwWebsites),
-      websiteTimeLimits: Value(websiteTimeLimits),
     );
   }
 
@@ -4583,8 +4558,6 @@ class Wellbeing extends DataClass implements Insertable<Wellbeing> {
       blockedWebsites:
           serializer.fromJson<List<String>>(json['blockedWebsites']),
       nsfwWebsites: serializer.fromJson<List<String>>(json['nsfwWebsites']),
-      websiteTimeLimits:
-          serializer.fromJson<Map<String, int>>(json['websiteTimeLimits']),
     );
   }
   @override
@@ -4598,8 +4571,6 @@ class Wellbeing extends DataClass implements Insertable<Wellbeing> {
       'blockNsfwSites': serializer.toJson<bool>(blockNsfwSites),
       'blockedWebsites': serializer.toJson<List<String>>(blockedWebsites),
       'nsfwWebsites': serializer.toJson<List<String>>(nsfwWebsites),
-      'websiteTimeLimits':
-          serializer.toJson<Map<String, int>>(websiteTimeLimits),
     };
   }
 
@@ -4609,8 +4580,7 @@ class Wellbeing extends DataClass implements Insertable<Wellbeing> {
           List<PlatformFeatures>? blockedFeatures,
           bool? blockNsfwSites,
           List<String>? blockedWebsites,
-          List<String>? nsfwWebsites,
-          Map<String, int>? websiteTimeLimits}) =>
+          List<String>? nsfwWebsites}) =>
       Wellbeing(
         id: id ?? this.id,
         allowedShortsTimeSec: allowedShortsTimeSec ?? this.allowedShortsTimeSec,
@@ -4618,7 +4588,6 @@ class Wellbeing extends DataClass implements Insertable<Wellbeing> {
         blockNsfwSites: blockNsfwSites ?? this.blockNsfwSites,
         blockedWebsites: blockedWebsites ?? this.blockedWebsites,
         nsfwWebsites: nsfwWebsites ?? this.nsfwWebsites,
-        websiteTimeLimits: websiteTimeLimits ?? this.websiteTimeLimits,
       );
   Wellbeing copyWithCompanion(WellbeingTableCompanion data) {
     return Wellbeing(
@@ -4638,9 +4607,6 @@ class Wellbeing extends DataClass implements Insertable<Wellbeing> {
       nsfwWebsites: data.nsfwWebsites.present
           ? data.nsfwWebsites.value
           : this.nsfwWebsites,
-      websiteTimeLimits: data.websiteTimeLimits.present
-          ? data.websiteTimeLimits.value
-          : this.websiteTimeLimits,
     );
   }
 
@@ -4652,15 +4618,14 @@ class Wellbeing extends DataClass implements Insertable<Wellbeing> {
           ..write('blockedFeatures: $blockedFeatures, ')
           ..write('blockNsfwSites: $blockNsfwSites, ')
           ..write('blockedWebsites: $blockedWebsites, ')
-          ..write('nsfwWebsites: $nsfwWebsites, ')
-          ..write('websiteTimeLimits: $websiteTimeLimits')
+          ..write('nsfwWebsites: $nsfwWebsites')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(id, allowedShortsTimeSec, blockedFeatures,
-      blockNsfwSites, blockedWebsites, nsfwWebsites, websiteTimeLimits);
+      blockNsfwSites, blockedWebsites, nsfwWebsites);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -4670,8 +4635,7 @@ class Wellbeing extends DataClass implements Insertable<Wellbeing> {
           other.blockedFeatures == this.blockedFeatures &&
           other.blockNsfwSites == this.blockNsfwSites &&
           other.blockedWebsites == this.blockedWebsites &&
-          other.nsfwWebsites == this.nsfwWebsites &&
-          other.websiteTimeLimits == this.websiteTimeLimits);
+          other.nsfwWebsites == this.nsfwWebsites);
 }
 
 class WellbeingTableCompanion extends UpdateCompanion<Wellbeing> {
@@ -4681,7 +4645,6 @@ class WellbeingTableCompanion extends UpdateCompanion<Wellbeing> {
   final Value<bool> blockNsfwSites;
   final Value<List<String>> blockedWebsites;
   final Value<List<String>> nsfwWebsites;
-  final Value<Map<String, int>> websiteTimeLimits;
   const WellbeingTableCompanion({
     this.id = const Value.absent(),
     this.allowedShortsTimeSec = const Value.absent(),
@@ -4689,7 +4652,6 @@ class WellbeingTableCompanion extends UpdateCompanion<Wellbeing> {
     this.blockNsfwSites = const Value.absent(),
     this.blockedWebsites = const Value.absent(),
     this.nsfwWebsites = const Value.absent(),
-    this.websiteTimeLimits = const Value.absent(),
   });
   WellbeingTableCompanion.insert({
     this.id = const Value.absent(),
@@ -4698,7 +4660,6 @@ class WellbeingTableCompanion extends UpdateCompanion<Wellbeing> {
     this.blockNsfwSites = const Value.absent(),
     this.blockedWebsites = const Value.absent(),
     this.nsfwWebsites = const Value.absent(),
-    this.websiteTimeLimits = const Value.absent(),
   });
   static Insertable<Wellbeing> custom({
     Expression<int>? id,
@@ -4707,7 +4668,6 @@ class WellbeingTableCompanion extends UpdateCompanion<Wellbeing> {
     Expression<bool>? blockNsfwSites,
     Expression<String>? blockedWebsites,
     Expression<String>? nsfwWebsites,
-    Expression<String>? websiteTimeLimits,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -4717,7 +4677,6 @@ class WellbeingTableCompanion extends UpdateCompanion<Wellbeing> {
       if (blockNsfwSites != null) 'block_nsfw_sites': blockNsfwSites,
       if (blockedWebsites != null) 'blocked_websites': blockedWebsites,
       if (nsfwWebsites != null) 'nsfw_websites': nsfwWebsites,
-      if (websiteTimeLimits != null) 'website_time_limits': websiteTimeLimits,
     });
   }
 
@@ -4727,8 +4686,7 @@ class WellbeingTableCompanion extends UpdateCompanion<Wellbeing> {
       Value<List<PlatformFeatures>>? blockedFeatures,
       Value<bool>? blockNsfwSites,
       Value<List<String>>? blockedWebsites,
-      Value<List<String>>? nsfwWebsites,
-      Value<Map<String, int>>? websiteTimeLimits}) {
+      Value<List<String>>? nsfwWebsites}) {
     return WellbeingTableCompanion(
       id: id ?? this.id,
       allowedShortsTimeSec: allowedShortsTimeSec ?? this.allowedShortsTimeSec,
@@ -4736,7 +4694,6 @@ class WellbeingTableCompanion extends UpdateCompanion<Wellbeing> {
       blockNsfwSites: blockNsfwSites ?? this.blockNsfwSites,
       blockedWebsites: blockedWebsites ?? this.blockedWebsites,
       nsfwWebsites: nsfwWebsites ?? this.nsfwWebsites,
-      websiteTimeLimits: websiteTimeLimits ?? this.websiteTimeLimits,
     );
   }
 
@@ -4768,11 +4725,6 @@ class WellbeingTableCompanion extends UpdateCompanion<Wellbeing> {
           .$converternsfwWebsites
           .toSql(nsfwWebsites.value));
     }
-    if (websiteTimeLimits.present) {
-      map['website_time_limits'] = Variable<String>($WellbeingTableTable
-          .$converterwebsiteTimeLimits
-          .toSql(websiteTimeLimits.value));
-    }
     return map;
   }
 
@@ -4784,8 +4736,7 @@ class WellbeingTableCompanion extends UpdateCompanion<Wellbeing> {
           ..write('blockedFeatures: $blockedFeatures, ')
           ..write('blockNsfwSites: $blockNsfwSites, ')
           ..write('blockedWebsites: $blockedWebsites, ')
-          ..write('nsfwWebsites: $nsfwWebsites, ')
-          ..write('websiteTimeLimits: $websiteTimeLimits')
+          ..write('nsfwWebsites: $nsfwWebsites')
           ..write(')'))
         .toString();
   }
@@ -8246,7 +8197,6 @@ typedef $$WellbeingTableTableCreateCompanionBuilder = WellbeingTableCompanion
   Value<bool> blockNsfwSites,
   Value<List<String>> blockedWebsites,
   Value<List<String>> nsfwWebsites,
-  Value<Map<String, int>> websiteTimeLimits,
 });
 typedef $$WellbeingTableTableUpdateCompanionBuilder = WellbeingTableCompanion
     Function({
@@ -8256,7 +8206,6 @@ typedef $$WellbeingTableTableUpdateCompanionBuilder = WellbeingTableCompanion
   Value<bool> blockNsfwSites,
   Value<List<String>> blockedWebsites,
   Value<List<String>> nsfwWebsites,
-  Value<Map<String, int>> websiteTimeLimits,
 });
 
 class $$WellbeingTableTableFilterComposer
@@ -8294,11 +8243,6 @@ class $$WellbeingTableTableFilterComposer
       get nsfwWebsites => $composableBuilder(
           column: $table.nsfwWebsites,
           builder: (column) => ColumnWithTypeConverterFilters(column));
-
-  ColumnWithTypeConverterFilters<Map<String, int>, Map<String, int>, String>
-      get websiteTimeLimits => $composableBuilder(
-          column: $table.websiteTimeLimits,
-          builder: (column) => ColumnWithTypeConverterFilters(column));
 }
 
 class $$WellbeingTableTableOrderingComposer
@@ -8332,10 +8276,6 @@ class $$WellbeingTableTableOrderingComposer
   ColumnOrderings<String> get nsfwWebsites => $composableBuilder(
       column: $table.nsfwWebsites,
       builder: (column) => ColumnOrderings(column));
-
-  ColumnOrderings<String> get websiteTimeLimits => $composableBuilder(
-      column: $table.websiteTimeLimits,
-      builder: (column) => ColumnOrderings(column));
 }
 
 class $$WellbeingTableTableAnnotationComposer
@@ -8367,10 +8307,6 @@ class $$WellbeingTableTableAnnotationComposer
   GeneratedColumnWithTypeConverter<List<String>, String> get nsfwWebsites =>
       $composableBuilder(
           column: $table.nsfwWebsites, builder: (column) => column);
-
-  GeneratedColumnWithTypeConverter<Map<String, int>, String>
-      get websiteTimeLimits => $composableBuilder(
-          column: $table.websiteTimeLimits, builder: (column) => column);
 }
 
 class $$WellbeingTableTableTableManager extends RootTableManager<
@@ -8404,7 +8340,6 @@ class $$WellbeingTableTableTableManager extends RootTableManager<
             Value<bool> blockNsfwSites = const Value.absent(),
             Value<List<String>> blockedWebsites = const Value.absent(),
             Value<List<String>> nsfwWebsites = const Value.absent(),
-            Value<Map<String, int>> websiteTimeLimits = const Value.absent(),
           }) =>
               WellbeingTableCompanion(
             id: id,
@@ -8413,7 +8348,6 @@ class $$WellbeingTableTableTableManager extends RootTableManager<
             blockNsfwSites: blockNsfwSites,
             blockedWebsites: blockedWebsites,
             nsfwWebsites: nsfwWebsites,
-            websiteTimeLimits: websiteTimeLimits,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -8423,7 +8357,6 @@ class $$WellbeingTableTableTableManager extends RootTableManager<
             Value<bool> blockNsfwSites = const Value.absent(),
             Value<List<String>> blockedWebsites = const Value.absent(),
             Value<List<String>> nsfwWebsites = const Value.absent(),
-            Value<Map<String, int>> websiteTimeLimits = const Value.absent(),
           }) =>
               WellbeingTableCompanion.insert(
             id: id,
@@ -8432,7 +8365,6 @@ class $$WellbeingTableTableTableManager extends RootTableManager<
             blockNsfwSites: blockNsfwSites,
             blockedWebsites: blockedWebsites,
             nsfwWebsites: nsfwWebsites,
-            websiteTimeLimits: websiteTimeLimits,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
