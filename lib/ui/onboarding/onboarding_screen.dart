@@ -70,10 +70,9 @@ class _OnboardingState extends ConsumerState<OnboardingScreen> {
     _subscription = ref.listenManual<PermissionsModel>(
       permissionProvider,
       (_, perms) {
-        final haveAllEssentialPermissions = perms.haveUsageAccessPermission &&
+        final haveAllEssentialPermissions = perms.haveAccessibilityPermission &&
             perms.haveDisplayOverlayPermission &&
-            perms.haveAlarmsPermission &&
-            perms.haveNotificationPermission;
+            perms.haveAlarmsPermission;
 
         if (!haveAllEssentialPermissions) return;
         _finishOnboarding();
@@ -125,10 +124,9 @@ class _OnboardingState extends ConsumerState<OnboardingScreen> {
   Widget build(BuildContext context) {
     final isLastPage = _currentPage == _pages.length - 1;
     final perms = ref.watch(permissionProvider);
-    final haveAllEssentialPermissions = perms.haveUsageAccessPermission &&
+    final haveAllEssentialPermissions = perms.haveAccessibilityPermission &&
         perms.haveDisplayOverlayPermission &&
-        perms.haveAlarmsPermission &&
-        perms.haveNotificationPermission;
+        perms.haveAlarmsPermission;
 
     return PopScope(
       onPopInvokedWithResult: (didPop, _) => SystemNavigator.pop(),

@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.annotation.WorkerThread
 import com.mindful.android.AppConstants.SYSTEM_UI_PACKAGE
 import com.mindful.android.helpers.storage.SharedPrefsHelper
+import com.mindful.android.helpers.storage.UsageDatabaseHelper
 
 
 class TrackingManager(
@@ -20,21 +21,48 @@ class TrackingManager(
     }
 
     private var lastActiveApp: String = ""
+    private var sessionStartTime: Long = 0L
+    private val dbHelper = UsageDatabaseHelper.getInstance(context)
 
     @WorkerThread
     fun onNewEvent(packageName: String) {
-        if (lastActiveApp != packageName && packageName != SYSTEM_UI_PACKAGE) {
+        if (packageName == SYSTEM_UI_PACKAGE) return
+
+        if (lastActiveApp != packageName) {
+            val currentTime = System.currentTimeMillis()
+
+            // End previous session if exists
+            if (lastActiveApp.isNotEmpty()) {
+                dbHelper.insertUsageSession(lastActiveApp, sessionStartTime, currentTime)
+            }
+
+            // Start new session
             lastActiveApp = packageName
+            sessionStartTime = currentTime
+
             broadcastEvent(ACTION_NEW_APP_LAUNCHED, packageName)
         }
     }
 
 
     // Called when accessibility service is stopped
-    fun startManualTracking() = broadcastEvent(ACTION_ACCESSIBILITY_INACTIVE)
+    fun startManualTracking() {
+        // Close any open session before stopping
+        if (lastActiveApp.isNotEmpty()) {
+            val currentTime = System.currentTimeMillis()
+            dbHelper.insertUsageSession(lastActiveApp, sessionStartTime, currentTime)
+            lastActiveApp = ""
+        }
+        broadcastEvent(ACTION_ACCESSIBILITY_INACTIVE)
+    }
 
     // Called when accessibility service is started
-    fun stopManualTracking() = broadcastEvent(ACTION_ACCESSIBILITY_ACTIVE)
+    fun stopManualTracking() {
+        // Reset state
+        lastActiveApp = ""
+        sessionStartTime = System.currentTimeMillis()
+        broadcastEvent(ACTION_ACCESSIBILITY_ACTIVE)
+    }
 
 
     private fun broadcastEvent(action: String, extraPackage: String? = null) {

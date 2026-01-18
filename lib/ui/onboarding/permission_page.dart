@@ -13,11 +13,10 @@ import 'package:mindful/core/extensions/ext_build_context.dart';
 import 'package:mindful/core/extensions/ext_num.dart';
 import 'package:mindful/core/services/method_channel_service.dart';
 import 'package:mindful/ui/onboarding/onboarding_page.dart';
+import 'package:mindful/ui/permissions/accessibility_permission_tile.dart';
 import 'package:mindful/ui/permissions/alarm_permission_tile.dart';
 import 'package:mindful/ui/permissions/battery_permission_tile.dart';
 import 'package:mindful/ui/permissions/display_overlay_permission_tile.dart';
-import 'package:mindful/ui/permissions/notification_permission_tile.dart';
-import 'package:mindful/ui/permissions/usage_access_permission_tile.dart';
 
 class PermissionsPage extends StatelessWidget {
   const PermissionsPage({
@@ -43,13 +42,12 @@ class PermissionsPage extends StatelessWidget {
           12.vBox,
 
           /// Permission tiles
-          const NotificationPermissionTile(),
+          const AccessibilityPermissionTile(),
           const BatteryPermissionTile(),
 
           // Only SDK version Android(S [31]) and above need this permission
           if (sdkVersion >= 31) const AlarmPermissionTile(),
 
-          const UsageAccessPermissionTile(),
           const DisplayOverlayPermissionTile(),
 
           108.vBox,

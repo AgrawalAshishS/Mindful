@@ -2,11 +2,11 @@ package com.mindful.android.helpers.usages
 
 import android.app.usage.NetworkStats
 import android.app.usage.NetworkStatsManager
-import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import com.mindful.android.AppConstants.REMOVED_PACKAGE
 import com.mindful.android.AppConstants.TETHERING_PACKAGE
+import com.mindful.android.helpers.storage.UsageDatabaseHelper
 
 object AppsUsageHelper {
     /// Keys for the map
@@ -47,16 +47,14 @@ object AppsUsageHelper {
         Thread {
 
             // Fetch usages for the date
-            val usageStatsManager =
-                context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+            val dbHelper = UsageDatabaseHelper.getInstance(context)
 
             val networkStatsManager =
                 context.getSystemService(Context.NETWORK_STATS_SERVICE) as NetworkStatsManager
 
-            val screenUsage = ScreenUsageHelper.fetchUsageForInterval(
-                usageStatsManager = usageStatsManager,
-                start = startMsEpoch,
-                end = endMsEpoch
+            val screenUsage = dbHelper.queryUsageForInterval(
+                startTime = startMsEpoch,
+                endTime = endMsEpoch
             )
 
             val mobileDataUsage = NetworkUsageHelper.fetchMobileUsageForInterval(
